@@ -129,6 +129,23 @@ begin
 	fbibadf = DataFrame(csvSelFbiBa);
 end
 
+# ╔═╡ a5956591-77df-420d-9933-19745c298fda
+begin
+	fbiabs = string(path,"/", "EDI_029_absorption.csv")
+	csv_fbiabs = CSV.File(fbiabs; delim=';', decimal=',');    
+	fbiabsdf = DataFrame(csv_fbiabs);
+end
+
+# ╔═╡ 894312ea-08ea-4791-a694-2c9fea7c496c
+begin
+	fbiabsg2 = string(path,"/", "FBIG2_absorption.csv")
+	csv_fbiabsg2 = CSV.File(fbiabsg2; delim=';', decimal=',');    
+	fbiabsg2df = DataFrame(csv_fbiabsg2);
+end
+
+# ╔═╡ 8f82ec5c-3060-44bb-902a-5cf608e2e1c1
+
+
 # ╔═╡ 0eb3c064-9316-11eb-3c97-afba4053eb94
 function plot_fbi(λex, fbidf, fbibadf, fbiint, fbibaint, wl,
 		          labelFbi, labelFbiBa, colFbi, colFbiBa, title, legend)
@@ -139,7 +156,8 @@ function plot_fbi(λex, fbidf, fbibadf, fbiint, fbibaint, wl,
               	   colour = colFbi,
                    shape  = :circle,
                	   label  = labelFbi,
-               	   legend = legend)
+               	   legend = legend,
+				   fmt = :png)
 	
 	lfbi = string(labelFbi," Interpol")
 	lfbiba = string(labelFbiBa," Interpol")
@@ -147,18 +165,21 @@ function plot_fbi(λex, fbidf, fbibadf, fbiint, fbibaint, wl,
 	p2 = plot!(p1, L, FBI,
     	  colour = colFbi,
     	  label  = lfbi,
-    	  legend = legend)
+    	  legend = legend,
+	   	  fmt = :png)
 
 	p3 = plot!(p2, fbibadf.λ, fbibadf[!,λex],
                		  colour = colFbiBa,
                		  shape  = :circle,
                		  label  =labelFbiBa,
-               		  legend =legend)
+               		  legend =legend,
+				      fmt = :png)
 
 	p4 = plot!(p3, L, FBIBA,
     	  colour = colFbiBa,
     	  label  = lfbiba,
-    	  legend = legend)
+    	  legend = legend,
+		  fmt = :png)
 
 
 	xlabel!("λ (nm)")
@@ -176,12 +197,14 @@ function plot_fbin(fbin, fbiban, wl,
 	p1 = plot(L, FBI,
     		  colour = colFbi,
     		  label  =labelFbi,
-    		  legend=legend)
+    		  legend=legend,
+		      fmt = :png)
 
 	p2 = plot!(p1, L, FBIBA,
     		   colour = colFbiBa,
     		   label  =labelFbiBa,
-    		   legend=legend)
+    		   legend=legend,
+		       fmt = :png)
 
 	xlabel!("λ (nm)")
 	ylabel!("Intensity(normalised)")
@@ -201,6 +224,45 @@ end
 begin
 	fbi325 = LinearInterpolation(wl, fbidf[!,"E325"]);
 	fbiba325 = LinearInterpolation(wl, fbibadf[!,"E325"]);
+end
+
+# ╔═╡ c9671526-27fe-41fd-aaf4-a63a5562a726
+md"### Absorption"
+
+# ╔═╡ 1481eac4-8e0a-42db-822b-399af881abb4
+md"#### G1"
+
+# ╔═╡ c33899c4-ab79-4bc2-9511-c99900a0d2f8
+begin
+	@df fbiabsdf plot(:λ, [:FBI :FBI_Ba], 
+				   colour = [:green :blue],
+				   legend=:topleft, fmt = :png)
+	xlabel!("λ (nm)")
+	ylabel!("Absorption probability (AU)")
+	title!("Absorption probability FBI and FBI+BA G1 ")
+end
+
+# ╔═╡ dbc8668e-26f4-43e6-9474-29d04108a7ef
+md"#### G2"
+
+# ╔═╡ c4d19122-f3cc-4129-ac00-95fe0365d097
+begin
+	@df fbiabsg2df plot(:λ, [:FBIG2 :BIG2Ba], 
+				   colour = [:green :blue],
+				   legend=:topleft, fmt = :png)
+	xlabel!("λ (nm)")
+	ylabel!("Absorption probability (AU)")
+	title!("Absorption probability FBI and FBI+BA G2")
+end
+
+# ╔═╡ cb03c3d4-c7f8-4247-9a66-99d3deda9fbb
+begin
+	@df fbiabsg2df plot(:λ[400:600], [:FBIG2[400:600] :BIG2Ba[400:600]], 
+				   colour = [:green :blue],
+				   legend=:topleft, fmt = :png)
+	xlabel!("λ (nm)")
+	ylabel!("Absorption probability (AU)")
+	title!("Absorption probability FBI and FBI+BA G2")
 end
 
 # ╔═╡ 5361bf8e-9318-11eb-1acd-e9a10c2b30bf
@@ -393,8 +455,16 @@ r2g1 = fbibag1bp430 / fbig1bp430
 
 # ╔═╡ 09c95810-3983-4007-82a1-275aeb8e07cc
 md"### Summary of results:
-- Double ratio for G1 r2g1 =$r2g1
-- Double ratio for G2 r2g1 =$r2g2
+- ##### Double ratio for G1 
+- r2g1 =$r2g1
+- ##### Double ratio for G2 
+- r2g1 =$r2g2
+- ##### Fraction of FBI - FBIBa2+ in selected region for G1:
+- signal : $xfbibaG1
+- bkgnd  : $xfbiG1
+- ##### Fraction of FBI - FBIBa2+ in selected region for G2:
+- signal : $xfbibaG2
+- bkgnd  : $xfbiG2
 "
 
 # ╔═╡ 4c8107d9-327f-4ee1-bfb9-fb1384c7cc8b
@@ -427,10 +497,19 @@ md"### Summary of results:
 # ╠═cadd0620-9315-11eb-228e-135bd066038d
 # ╠═3581a751-8c1b-4ac7-a2d0-d3f993cf3c8e
 # ╠═d65c78aa-9315-11eb-094c-01765ce6cc2f
+# ╠═a5956591-77df-420d-9933-19745c298fda
+# ╠═894312ea-08ea-4791-a694-2c9fea7c496c
+# ╠═8f82ec5c-3060-44bb-902a-5cf608e2e1c1
 # ╠═0eb3c064-9316-11eb-3c97-afba4053eb94
 # ╠═322216ee-93cb-11eb-272c-b7f5e5d87ee5
 # ╠═8ad489e2-9318-11eb-1531-7515b778e6b8
 # ╠═9989f79a-9318-11eb-07a3-a9986579342d
+# ╠═c9671526-27fe-41fd-aaf4-a63a5562a726
+# ╠═1481eac4-8e0a-42db-822b-399af881abb4
+# ╠═c33899c4-ab79-4bc2-9511-c99900a0d2f8
+# ╠═dbc8668e-26f4-43e6-9474-29d04108a7ef
+# ╠═c4d19122-f3cc-4129-ac00-95fe0365d097
+# ╠═cb03c3d4-c7f8-4247-9a66-99d3deda9fbb
 # ╠═5361bf8e-9318-11eb-1acd-e9a10c2b30bf
 # ╠═2ecbd182-93ca-11eb-08f6-3d0c1710f9f5
 # ╠═eba136e2-93c9-11eb-21f8-8b36a5158624
