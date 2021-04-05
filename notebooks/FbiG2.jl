@@ -58,6 +58,9 @@ using Peaks
 # ╔═╡ fc8b79a2-8728-11eb-2da7-e3ffa3ceef08
 using DrWatson
 
+# ╔═╡ 20a461d5-16ac-4707-adec-ebfce6fc89c6
+include(srcdir("fbi.jl"))
+
 # ╔═╡ 79cfd2fc-9046-11eb-2b13-1b877d57645d
 md"# FBIG2
 
@@ -71,6 +74,9 @@ md"# FBIG2
 
 # ╔═╡ 621ec96c-86fd-11eb-1c41-379cc17180dc
 datadir()
+
+# ╔═╡ 9913df39-7aa4-42a3-8cb9-f66707185e22
+srcdir("fbi.jl")
 
 # ╔═╡ 0b1cedc7-8ada-45a5-adef-fbae794dee3e
 markercolors = [:green :orange :black :purple :red  :yellow :brown :white]
@@ -106,45 +112,8 @@ N_A
 # ╔═╡ 45bdd766-9131-11eb-31dc-f9ee1ced0db9
 md"# Notebook"
 
-# ╔═╡ cadd0620-9315-11eb-228e-135bd066038d
-md"## Molecule spectra"
-
-# ╔═╡ 3581a751-8c1b-4ac7-a2d0-d3f993cf3c8e
-md"### FBI"
-
-# ╔═╡ d65c78aa-9315-11eb-094c-01765ce6cc2f
-begin
-	path=string(datadir(),"/fluorimeter")
-	selFbiBa =["EDI044_FBI_Ba_round4_em325_375_405.csv",
-             "EDI044_FBI_Ba_round5_em325_375_405.csv"]
-	selFbi =["EDI044_FBI_round4_em325_375_405.csv",
-               "EDI044_FBI_round5_em325_375_405.csv"]
-
-	fsfbi =   [string(path,"/", fbi) for fbi in selFbi]
-    fsfbiba = [string(path,"/", fbi) for fbi in selFbiBa]
-
-	csvSelFbi = CSV.File(fsfbi[1]; delim=';', decimal=',')
-	fbidf = DataFrame(csvSelFbi);
-	csvSelFbiBa = CSV.File(fsfbiba[1]; delim=';', decimal=',')
-	fbibadf = DataFrame(csvSelFbiBa);
-end
-
-# ╔═╡ a5956591-77df-420d-9933-19745c298fda
-begin
-	fbiabs = string(path,"/", "EDI_029_absorption.csv")
-	csv_fbiabs = CSV.File(fbiabs; delim=';', decimal=',');    
-	fbiabsdf = DataFrame(csv_fbiabs);
-end
-
-# ╔═╡ 894312ea-08ea-4791-a694-2c9fea7c496c
-begin
-	fbiabsg2 = string(path,"/", "FBIG2_absorption.csv")
-	csv_fbiabsg2 = CSV.File(fbiabsg2; delim=';', decimal=',');    
-	fbiabsg2df = DataFrame(csv_fbiabsg2);
-end
-
-# ╔═╡ 8f82ec5c-3060-44bb-902a-5cf608e2e1c1
-
+# ╔═╡ a1af2f43-a6f4-4b5d-a882-abf91f109a44
+md"## Notebook functions"
 
 # ╔═╡ 0eb3c064-9316-11eb-3c97-afba4053eb94
 function plot_fbi(λex, fbidf, fbibadf, fbiint, fbibaint, wl,
@@ -212,6 +181,45 @@ function plot_fbin(fbin, fbiban, wl,
 	return p2
 end
 
+# ╔═╡ 8e63260a-0d0b-4551-96ee-88322e6e389f
+
+
+# ╔═╡ cadd0620-9315-11eb-228e-135bd066038d
+md"## Molecule spectra"
+
+# ╔═╡ 660c8c2d-6b3c-4a12-8e44-ea9dd1c461ff
+begin
+fbiname      = "EDI044_FBI_round4_em325_375_405.csv"
+fbibaname    = "EDI044_FBI_Ba_round4_em325_375_405.csv"
+fbiabsname   = "EDI_029_absorption.csv"
+fbig2name    = "FBIG2.csv"
+fbibag2name  = "FBIBaG2.csv"
+	
+fbiabsG2name = 	"FBIG2_absorption.csv"
+fbidir       = "fluorimeter"
+end
+
+# ╔═╡ 9cc0ece2-f2b9-4b54-9603-75e78d564b76
+fbidf   = load_fbidf(fbidir, fbiname)
+
+# ╔═╡ d4e70ec0-b6b9-47a0-a575-6d15fc2d25e1
+fbig2df = load_fbidf(fbidir, fbig2name)
+
+# ╔═╡ 871a129f-d016-4088-b1e6-c0a7d74e0393
+fbibadf = load_fbidf(fbidir, fbibaname)
+
+# ╔═╡ e7d591ac-fd39-45e6-8c61-e5c74cdfd597
+fbibag2df = load_fbidf(fbidir, fbibag2name)
+
+# ╔═╡ 5a401dd6-05a4-47c1-af10-d67a4d9b40dc
+fbiabsdf = load_fbidf(fbidir, fbiabsname)
+
+# ╔═╡ d2bc643b-c247-4f55-ad67-1992bf25a30f
+fbiabsg2df = load_fbidf(fbidir, fbiabsG2name)
+
+# ╔═╡ 82b9a9fc-feaa-4b67-98b8-577c8bdf3378
+md" ## G1"
+
 # ╔═╡ 8ad489e2-9318-11eb-1531-7515b778e6b8
 begin
     wf = 335.
@@ -220,11 +228,51 @@ begin
     wl = wf:ws:we
 end
 
-# ╔═╡ 9989f79a-9318-11eb-07a3-a9986579342d
+# ╔═╡ e47a9702-710b-44f4-9adf-136e04b3b04e
+fbi325 = dftof(wl, fbidf, "E325")
+
+# ╔═╡ 2cb6d5aa-3bdd-4ce6-be0a-dcaac538b86f
+fbiba325 = dftof(wl, fbibadf, "E325")
+
+# ╔═╡ 772e3bc5-a169-4c1d-aa22-2ea0720ef707
+fbiE325G1N, fbipdf = ftopdf(wl, fbi325)
+
+# ╔═╡ a1bfbae2-b284-417d-953f-bc5a2493d56c
+@test quadgk(fbipdf, wl[1], wl[end])[1] ≈ 1
+
+# ╔═╡ 8cf9ece5-c345-4e65-8426-2b71f9f7fea8
+fbibaE325G1N, fbibapdf = ftopdf(wl, fbiba325)
+
+# ╔═╡ ff5cdffb-0ce9-4f1b-a0ad-ce74e9d8f5e9
+@test quadgk(fbibapdf, wl[1], wl[end])[1] ≈ 1
+
+# ╔═╡ 627d372c-3b7a-45c0-a416-b8ffe4e5a02b
+md"## G2"
+
+# ╔═╡ e6565f94-4419-4359-941d-bbddd56381fc
 begin
-	fbi325 = LinearInterpolation(wl, fbidf[!,"E325"]);
-	fbiba325 = LinearInterpolation(wl, fbibadf[!,"E325"]);
+    w2f = 300.
+    w2e = 800.
+    w2l = w2f:ws:w2e
 end
+
+# ╔═╡ 0b07b62b-62d1-43da-949e-77a02d74856c
+fbi325g2 = dftof(w2l, fbig2df, "E325")
+
+# ╔═╡ ea30ed3d-a19c-4d3f-8806-737df8954a15
+fbiba325g2 = dftof(w2l, fbibag2df, "E325")
+
+# ╔═╡ 4a57223f-d47b-4d3c-b07c-5121585d20d5
+fbiE325G2N, fbig2pdf   = ftopdf(w2l, fbi325g2)
+
+# ╔═╡ 4eee17f1-117a-4fb9-88b8-5abd5bc6c69a
+fbibaE325G2N, fbibag2pdf = ftopdf(w2l, fbiba325g2)
+
+# ╔═╡ bd9421ed-8fe5-45dd-9f9e-b9cf99077694
+@test quadgk(fbig2pdf, w2l[1], w2l[end])[1]  ≈ 1
+
+# ╔═╡ 1f0ec58c-3184-4ceb-b019-28d9bffbc16f
+@test quadgk(fbibag2pdf, w2l[1], w2l[end])[1]  ≈ 1
 
 # ╔═╡ c9671526-27fe-41fd-aaf4-a63a5562a726
 md"### Absorption"
@@ -268,105 +316,32 @@ end
 # ╔═╡ 5361bf8e-9318-11eb-1acd-e9a10c2b30bf
 pfbiE325G1 = plot_fbi("E325",fbidf, fbibadf,fbi325,fbiba325,wl,"FbiG1", "FbiBaG1", :green, :blue, "FBI/BA G1 325 nm", :topright)
 
-# ╔═╡ 2ecbd182-93ca-11eb-08f6-3d0c1710f9f5
-md"#### Normalize to the area of fbi and fbiba"
-
-# ╔═╡ eba136e2-93c9-11eb-21f8-8b36a5158624
-fbiE325G1N = quadgk(fbi325, 335., 700.)[1]
-
-# ╔═╡ 6deec574-93ca-11eb-0b5f-1b0d7ca04b61
-fbibaE325G1N = quadgk(fbiba325, 335., 700.)[1]
-
-# ╔═╡ 46411c0e-93cd-11eb-1039-8fe43a7679d5
-md"`fpdf(fi, xmin, xmax, N)` takes an interpolated function fi, lower (xmin) and upper (xmax) values of interpolation and a normalisation constant and returns a function equal to fi(x) / N in the range xmin-xmax and zero otherwise."
-
-# ╔═╡ 353b7b37-c037-49f9-b149-56541db6cc28
-function gfpdf(fi, xmin, xmax, N)
-	function fn(x)
-		if x < xmin || x > xmax
-			return 0
-		else
-			return fi(x) / N
-		end
-	end
-
-	return fn
-end
-
-# ╔═╡ 566a984a-f0fc-482f-9b04-029cba608aef
-fpdf(fi, xmin::Float64, xmax::Float64, N::Float64) = gfpdf(fi, xmin, xmax, N)
-
-# ╔═╡ fee9eace-93cd-11eb-114c-c174cc6637ce
-fbipdf = fpdf(fbi325, 335.0, 700.0, 1.0)
-
-# ╔═╡ 4d17046e-ce2e-4863-8231-2ded5722ff44
-fbibapdf = fpdf(fbiba325, 335.0, 700.0, 1.0)
-
-# ╔═╡ 2d0e3c95-fcd6-4d96-9ca0-bd8c8be01edb
-@test quadgk(fbipdf, 335., 700.)[1] / fbiE325G1N ≈ 1
-
-# ╔═╡ 7738f929-c288-4c90-92e4-17078184c2de
-@test quadgk(fbibapdf, 335., 700.)[1] / fbibaE325G1N ≈ 1
-
-# ╔═╡ 76a569c4-93cb-11eb-3bb4-55e0c9221e53
-pfbi = plot_fbin(fbipdf, fbibapdf, wl, "FBI", "FBIBa2+", :green, :blue, "FBI G1 (325 nm)", :topleft)
+# ╔═╡ 971f16da-62af-49b0-bb38-5f4c39b2b886
+pfbi = plot_fbin(fbipdf, fbibapdf, wl, 
+		  "Fbi G1 pdf", "FbiBa G1 pdf", :green, :blue, "PDF FBI G1 325 nm", :topright)
 
 # ╔═╡ 4d5bdc05-0f5d-403f-b303-93e95ec408ca
 md"### FBIG2"
 
-# ╔═╡ 1b1f52a8-ddf1-4f16-ab4a-196af7938450
-begin
-	fsfbig2    =   string(path,"/", "FBIG2.csv") 
-	csvFbiG2 = CSV.File(fsfbig2; delim=';', decimal=',')
-	fbig2df = DataFrame(csvFbiG2)
-end
-
-# ╔═╡ b75e15f4-c70b-4e8e-8786-b96307e69f16
-begin
-	fsfbibag2    =   string(path,"/", "FBIBaG2.csv") 
-	csvFbiBaG2 = CSV.File(fsfbibag2; delim=';', decimal=',')
-	fbibag2df = DataFrame(csvFbiBaG2)
-end
-
-# ╔═╡ ecb20e55-e9ae-46e4-928e-35a9382a320c
-begin
-    w2f = 300.
-    w2e = 800.
-    w2l = w2f:ws:w2e
-end
-
 # ╔═╡ 7cd1e229-96d0-4786-bbe4-d63b524e6619
-begin
-	fbi325g2 = LinearInterpolation(w2l, fbig2df[!,"E325"]);
-	fbiba325g2 = LinearInterpolation(w2l, fbibag2df[!,"E325"]);
-end
+
 
 # ╔═╡ bd811db1-28b8-4869-9b8d-d10e5fa0324e
 pfbiE325G2 = plot_fbi("E325", fbig2df, fbibag2df,fbi325g2,fbiba325g2,w2l,"FbiG2", "FbiBaG2", :red, :orange, "FBI/BA G2 325 nm", :topright)
 
-# ╔═╡ 93b3e901-84be-462a-96c6-c6cec4604b50
-fbiE325G2N = quadgk(fbi325g2, 480., 800.)[1]
-
-# ╔═╡ d3fd15f2-4e32-4f3f-a5fa-dfc6df4721d1
-fbibaE325G2N = quadgk(fbiba325g2, 480., 800.)[1]
-
-# ╔═╡ 1db9de6b-4572-48ba-ab3a-84b4ddc56696
-fbig2pdf = fpdf(fbi325g2, 480.0, 800.0, 1.0)
-
-# ╔═╡ 7b9c32f2-a314-4523-a27a-5fee782616d0
-fbibag2pdf = fpdf(fbiba325g2, 480.0, 800.0, 1.0)
-
-# ╔═╡ dba59cde-7305-4aff-80d2-0d83fc20d3b1
-@test quadgk(fbig2pdf, 480., 800.)[1] / fbiE325G2N ≈ 1
-
-# ╔═╡ 845af2e4-791b-44dd-af4b-2f8fcfa0056d
-@test quadgk(fbibag2pdf, 480., 800.)[1] / fbibaE325G2N ≈ 1
-
 # ╔═╡ 7dc9afbf-074a-4149-bbae-7b182916e7f2
-pfbig2 = plot_fbin(fbig2pdf, fbibag2pdf, 400.0:800.0, "FBI", "FBIBa2+", :red, :orange, "FBI G2 (325 nm)", :topleft)
+pfbig2 = plot_fbin(fbig2pdf, fbibag2pdf, w2l, "FBI", "FBIBa2+", :red, :orange, "FBI G2 (325 nm)", :topleft)
 
 # ╔═╡ 6a0ba3b4-ed64-4c21-bbcd-ad88685b6453
 plot(pfbi, pfbig2, layout = (1, 2), legend = false, fmt = :png)
+
+# ╔═╡ 9de1cf4b-a383-4bfe-a45b-351b94c75385
+plot(pfbiE325G1, pfbiE325G2, layout = (1, 2), legend = false, fmt = :png)
+
+# ╔═╡ b6a12dc8-a173-4c57-a30e-5d8cbd7e74ec
+md"### Maximum discrimination region:
+- for g1 is between 420 and 430
+- for g2 is between 520 and 540"
 
 # ╔═╡ a2cc0f38-f774-489b-98a0-9c713e99b11a
 pfbig2v1 = plot_fbin(fbig2pdf, fbibag2pdf, 480.0:570.0, "FBI", "FBIBa2+", :red, :orange, "FBI G2 (325 nm)", :topleft)
@@ -380,11 +355,6 @@ pfbig1v1 = plot_fbin(fbipdf, fbibapdf, 400.0:450.0, "FBI", "FBIBa2+", :green, :b
 # ╔═╡ 95ce45d1-d000-46c4-9996-2aa6db2876cf
 md"### Ratios and double ratio for G1 and G2"
 
-# ╔═╡ b6a12dc8-a173-4c57-a30e-5d8cbd7e74ec
-md"##### Maximum discrimination region:
-- for g1 is between 420 and 430
-- for g2 is between 520 and 540"
-
 # ╔═╡ dfda96c5-9e1a-4ff4-bc41-127ab9332dcf
 begin
 	λming1 = 420
@@ -397,10 +367,10 @@ end
 md"#### Ratios for G2"
 
 # ╔═╡ 51af996b-3b7a-4156-b4bd-6d4ce60ef653
-fbig2bp500 = quadgk(fbig2pdf, 520.0,  540.0)[1]
+fbig2bp500 = quadgk(fbi325g2, λming2,  λmaxg2)[1]
 
 # ╔═╡ 6da39665-c055-4b15-808a-ba154c148967
-fbibag2bp500 = quadgk(fbibag2pdf, 520.0,  540.0)[1]
+fbibag2bp500 = quadgk(fbiba325g2, λming2,  λmaxg2)[1]
 
 # ╔═╡ 47909f5c-6808-4f37-8893-26c3003ee47f
 md"##### Ratio of total recorded signal: FBIBa2+/FBI"
@@ -427,10 +397,10 @@ r2g2 = fbibag2bp500 / fbig2bp500
 md"### Ratios for G1"
 
 # ╔═╡ e0b1c1d0-1d65-48c0-b09f-844bd27187fb
-fbig1bp430 = quadgk(fbipdf, 400.0,  430.0)[1]
+fbig1bp430 = quadgk(fbi325, 400.0,  430.0)[1]
 
 # ╔═╡ dea8bc12-e165-471f-8689-2d329a92b364
-fbibag1bp430 = quadgk(fbibapdf, 400.0,  430.0)[1]
+fbibag1bp430 = quadgk(fbiba325, 400.0,  430.0)[1]
 
 # ╔═╡ d5326ccc-3e0c-4d5a-bada-060236ea521a
 md"##### Ratio of total recorded signal: FBIBa2+/FBI"
@@ -486,6 +456,8 @@ md"### Summary of results:
 # ╠═0f2f4c78-8729-11eb-2bab-27812ce8c47e
 # ╠═5ee27d52-86fd-11eb-365e-9f2b1a095575
 # ╠═621ec96c-86fd-11eb-1c41-379cc17180dc
+# ╠═9913df39-7aa4-42a3-8cb9-f66707185e22
+# ╠═20a461d5-16ac-4707-adec-ebfce6fc89c6
 # ╠═0b1cedc7-8ada-45a5-adef-fbae794dee3e
 # ╟─3c01d7c8-8645-11eb-372d-4d66ae46ae72
 # ╠═46b5465a-8645-11eb-0291-612455795518
@@ -494,16 +466,34 @@ md"### Summary of results:
 # ╠═f8d3f48a-904f-11eb-2659-51f7508b434d
 # ╠═9fdae9e2-6d2e-4901-8f48-14764b6800c2
 # ╟─45bdd766-9131-11eb-31dc-f9ee1ced0db9
-# ╠═cadd0620-9315-11eb-228e-135bd066038d
-# ╠═3581a751-8c1b-4ac7-a2d0-d3f993cf3c8e
-# ╠═d65c78aa-9315-11eb-094c-01765ce6cc2f
-# ╠═a5956591-77df-420d-9933-19745c298fda
-# ╠═894312ea-08ea-4791-a694-2c9fea7c496c
-# ╠═8f82ec5c-3060-44bb-902a-5cf608e2e1c1
+# ╠═a1af2f43-a6f4-4b5d-a882-abf91f109a44
 # ╠═0eb3c064-9316-11eb-3c97-afba4053eb94
 # ╠═322216ee-93cb-11eb-272c-b7f5e5d87ee5
+# ╠═8e63260a-0d0b-4551-96ee-88322e6e389f
+# ╠═cadd0620-9315-11eb-228e-135bd066038d
+# ╠═660c8c2d-6b3c-4a12-8e44-ea9dd1c461ff
+# ╠═9cc0ece2-f2b9-4b54-9603-75e78d564b76
+# ╠═d4e70ec0-b6b9-47a0-a575-6d15fc2d25e1
+# ╠═871a129f-d016-4088-b1e6-c0a7d74e0393
+# ╠═e7d591ac-fd39-45e6-8c61-e5c74cdfd597
+# ╠═5a401dd6-05a4-47c1-af10-d67a4d9b40dc
+# ╠═d2bc643b-c247-4f55-ad67-1992bf25a30f
+# ╠═82b9a9fc-feaa-4b67-98b8-577c8bdf3378
 # ╠═8ad489e2-9318-11eb-1531-7515b778e6b8
-# ╠═9989f79a-9318-11eb-07a3-a9986579342d
+# ╠═e47a9702-710b-44f4-9adf-136e04b3b04e
+# ╠═2cb6d5aa-3bdd-4ce6-be0a-dcaac538b86f
+# ╠═772e3bc5-a169-4c1d-aa22-2ea0720ef707
+# ╠═a1bfbae2-b284-417d-953f-bc5a2493d56c
+# ╠═8cf9ece5-c345-4e65-8426-2b71f9f7fea8
+# ╠═ff5cdffb-0ce9-4f1b-a0ad-ce74e9d8f5e9
+# ╠═627d372c-3b7a-45c0-a416-b8ffe4e5a02b
+# ╠═e6565f94-4419-4359-941d-bbddd56381fc
+# ╠═0b07b62b-62d1-43da-949e-77a02d74856c
+# ╠═ea30ed3d-a19c-4d3f-8806-737df8954a15
+# ╠═4a57223f-d47b-4d3c-b07c-5121585d20d5
+# ╠═4eee17f1-117a-4fb9-88b8-5abd5bc6c69a
+# ╠═bd9421ed-8fe5-45dd-9f9e-b9cf99077694
+# ╠═1f0ec58c-3184-4ceb-b019-28d9bffbc16f
 # ╠═c9671526-27fe-41fd-aaf4-a63a5562a726
 # ╠═1481eac4-8e0a-42db-822b-399af881abb4
 # ╠═c33899c4-ab79-4bc2-9511-c99900a0d2f8
@@ -511,36 +501,18 @@ md"### Summary of results:
 # ╠═c4d19122-f3cc-4129-ac00-95fe0365d097
 # ╠═cb03c3d4-c7f8-4247-9a66-99d3deda9fbb
 # ╠═5361bf8e-9318-11eb-1acd-e9a10c2b30bf
-# ╠═2ecbd182-93ca-11eb-08f6-3d0c1710f9f5
-# ╠═eba136e2-93c9-11eb-21f8-8b36a5158624
-# ╠═6deec574-93ca-11eb-0b5f-1b0d7ca04b61
-# ╠═46411c0e-93cd-11eb-1039-8fe43a7679d5
-# ╠═353b7b37-c037-49f9-b149-56541db6cc28
-# ╠═566a984a-f0fc-482f-9b04-029cba608aef
-# ╠═fee9eace-93cd-11eb-114c-c174cc6637ce
-# ╠═4d17046e-ce2e-4863-8231-2ded5722ff44
-# ╠═2d0e3c95-fcd6-4d96-9ca0-bd8c8be01edb
-# ╠═7738f929-c288-4c90-92e4-17078184c2de
-# ╠═76a569c4-93cb-11eb-3bb4-55e0c9221e53
+# ╠═971f16da-62af-49b0-bb38-5f4c39b2b886
 # ╠═4d5bdc05-0f5d-403f-b303-93e95ec408ca
-# ╠═1b1f52a8-ddf1-4f16-ab4a-196af7938450
-# ╠═b75e15f4-c70b-4e8e-8786-b96307e69f16
-# ╠═ecb20e55-e9ae-46e4-928e-35a9382a320c
 # ╠═7cd1e229-96d0-4786-bbe4-d63b524e6619
 # ╠═bd811db1-28b8-4869-9b8d-d10e5fa0324e
-# ╠═93b3e901-84be-462a-96c6-c6cec4604b50
-# ╠═d3fd15f2-4e32-4f3f-a5fa-dfc6df4721d1
-# ╠═1db9de6b-4572-48ba-ab3a-84b4ddc56696
-# ╠═7b9c32f2-a314-4523-a27a-5fee782616d0
-# ╠═dba59cde-7305-4aff-80d2-0d83fc20d3b1
-# ╠═845af2e4-791b-44dd-af4b-2f8fcfa0056d
 # ╠═7dc9afbf-074a-4149-bbae-7b182916e7f2
 # ╠═6a0ba3b4-ed64-4c21-bbcd-ad88685b6453
+# ╠═9de1cf4b-a383-4bfe-a45b-351b94c75385
+# ╠═b6a12dc8-a173-4c57-a30e-5d8cbd7e74ec
 # ╠═a2cc0f38-f774-489b-98a0-9c713e99b11a
 # ╠═ebc85de9-e9f1-4be0-8d63-1982006c047e
 # ╠═2ee3952b-99d4-4e7f-aa92-e32c16aa008a
 # ╠═95ce45d1-d000-46c4-9996-2aa6db2876cf
-# ╠═b6a12dc8-a173-4c57-a30e-5d8cbd7e74ec
 # ╠═dfda96c5-9e1a-4ff4-bc41-127ab9332dcf
 # ╠═895210fa-ab74-4021-8e5f-e5bae0e8fc5b
 # ╠═51af996b-3b7a-4156-b4bd-6d4ce60ef653
