@@ -4,6 +4,20 @@ using Interpolations
 using QuadGK
 using DrWatson
 
+struct gf          # general function
+	N  ::Float64
+	f  ::Function
+	pdf::Function
+end
+
+struct Φ
+	Φu::Float64
+	Φc::Float64
+	ϵu::Float64
+	ϵc::Float64
+	Φuc::Float64
+	fuc::Float64
+end
 
 function load_fbidf(fbidir::String, fbiname::String)
 	path       = string(datadir(),"/", fbidir)
@@ -49,4 +63,42 @@ function eps_band(fbipdf::Function, fbibapdf::Function,
 	eps_c = qpdf(fbibapdf, λmin, λmax)
 	eps_u = qpdf(fbipdf, λmin, λmax)
 	return eps_c / sqrt(eps_u)
+end
+
+
+function f_and_pdf_from_df(wr, df, column)
+	fint   = dftof(wr, df, column)
+	f      = gfpdf(fint, wr[1], wr[end])
+	N, pdf = ftopdf(wr, f)
+	return gf(N, f, pdf)
+end
+
+
+function fbigen(wr, df, columns)
+	return [f_and_pdf_from_df(wr, df, c) for c in columns]
+end
+
+
+function fom(fbi, fbiba, λmin, λmax)
+	Φu = qpdf(fbi.f, λmin, λmax)
+	ϵu = Φu / fbi.N
+	Φc = qpdf(fbiba.f, λmin, λmax)
+	ϵc = Φc / fbiba.N
+	Φuc = Φc / Φu
+	fuc = Φc / sqrt(Φu)
+	return Φ(Φu,Φc,ϵu,ϵc,Φuc,fuc)
+end
+
+
+function test_fbis(wr, fbis)
+	Ll = collect(wr)
+	test = [fbi.f.(Ll)/fbi.N ≈ fbi.pdf.(Ll) for fbi in fbis]
+	return all(test)
+end
+
+
+function test_fbi_pdfs(wr, fbis)
+	Ll = collect(wr)
+	test = [quadgk(fbi.pdf, wr[1], wr[end])[1] ≈ 1 for fbi in fbis]
+	return all(test)
 end
