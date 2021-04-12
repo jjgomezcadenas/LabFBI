@@ -136,6 +136,20 @@ md"## Discussion"
 # ╔═╡ a1af2f43-a6f4-4b5d-a882-abf91f109a44
 md"## Notebook functions"
 
+# ╔═╡ 671732ee-b2df-4b17-a29a-c6854f5e6548
+md"- Get the concentration from columns"
+
+# ╔═╡ e60f09c7-92c9-484a-80ae-a857fe4740a4
+	function ccfromcol(cols)
+		CC = []
+		for col in cols
+			xcol = split(col,"_")
+			push!(CC, parse(Float64, xcol[2]))
+		end
+		return CC
+	end
+
+
 # ╔═╡ f4f2ce5a-5ab7-4a9f-8c64-5db8f37a672f
 md"- Plots the columns defined by cols from dataframe df"
 
@@ -189,14 +203,6 @@ function plot_df_ivsc(df, cols, title)
 		return xsum
 	end
 	
-	function ccfromcol(cols)
-		CC = []
-		for col in cols
-			xcol = split(col,"_")
-			push!(CC, parse(Float64, xcol[2]))
-		end
-		return CC
-	end
 	
 	areas = [sum(df[!,col]) for col in cols]
 	
@@ -407,8 +413,14 @@ colg1soldf = ["FBIG1_5E-6","FBIG1_5E-5", "FBIG1_1E-4",	"FBIG1_5E-4"];
 # ╔═╡ 9afb1a36-a5d2-4718-b926-55c77bb3b26d
 colg1sidf = ["FBIG1_2.3E-5", "FBIG1_2.3E-6", "FBIG1_2.3E-7", "FBIG1_7.4E-8",	"FBIG1_2.3E-8"];
 
+# ╔═╡ 6a84549d-c6cd-4467-b8fa-dc9db4774dd5
+ccfbig1si = ccfromcol(colg1sidf)
+
 # ╔═╡ c485625b-c653-4b37-be27-598ba3c8010c
 colbag1sidf = ["FBIBaG1_7.4E-7", "FBIBaG1_7.4E-8", "FBIBaG1_7.4E-09",	"FBIBaG1_7.4E-10"];
+
+# ╔═╡ b239005c-c9ae-4b0d-bd99-d5e5bc373459
+ccfbibag1si = ccfromcol(colbag1sidf)
 
 # ╔═╡ a4bd50fb-0268-4564-b9a1-9721ba592e60
 colg2soldf = ["FBIG2_5E-6",	"FBIG2_5E-5", "FBIG2_1E-4",	"FBIG2_5E-4"];
@@ -416,8 +428,14 @@ colg2soldf = ["FBIG2_5E-6",	"FBIG2_5E-5", "FBIG2_1E-4",	"FBIG2_5E-4"];
 # ╔═╡ ff0d10c5-89e2-4cbc-81d9-7276986168dd
 colg2sidf = ["FBIG2_2.3E-6", "FBIG2_2.3E-7", "FBIG2_2.3E-8"];
 
+# ╔═╡ 8e50d7e8-65c3-4e97-8224-488b722cc6b3
+ccfbig2si = ccfromcol(colg2sidf)
+
 # ╔═╡ ab7210ff-8365-488a-b127-d4ad9e0e2c3c
 colbag2sidf = ["FBIBaG2_7.4E-8",	"FBIBaG2_7.4E-9",	"FBIBaG2_7.4E-10"];
+
+# ╔═╡ 2b3937ad-0b95-4459-893f-248c6591bf30
+ccfbibag2si = ccfromcol(colbag2sidf)
 
 # ╔═╡ 2bc8d78f-1412-45e3-9c96-04e3683e3c39
 md"#### Dependence of FBI G1 with concentration 
@@ -580,25 +598,111 @@ end
 # ╔═╡ 975542df-8d55-405c-adfb-3a310611e374
 md"#### FBI and FBIBa2+ in silica: Reference concentration"
 
+# ╔═╡ 845656ec-bc58-4fec-9589-4c7d91b4c6f6
+function m_from_cc(ccs, ccsitoba=30mg/cm^2 )
+	nmol=[]
+	for c in ccs
+		lbl = string("FBI, cc=", c, " mm/mg")
+		sifbi = lfbi.Powder(lbl, c*mmol/mg, ccsitoba)
+		push!(nmol, lfbi.nof_molecules_area(sifbi, 1nm^2))
+	end
+	return nmol
+end
+		
+
+# ╔═╡ 2bf7245f-097d-492e-95e5-ff3f10f2c2b1
+function m_from_cc2(cc, ccsitoba=30mg/cm^2 )
+	sifbi = lfbi.Powder(" ", cc*mmol/mg, ccsitoba)
+	return lfbi.nof_molecules_area(sifbi, 1nm^2)
+end
+
+# ╔═╡ 12d064c7-d239-4cb6-ae5a-982e3be5f1fa
+function float_to_fstr(val, fmt)
+	ex = quote
+	@sprintf $fmt $val
+	end
+	eval(ex)
+end
+	
+
+# ╔═╡ 9088927d-995f-4422-bc5a-8e6faa5dc926
+function vect_to_md(vect, fmt)
+	vs = float_to_fstr.(vect,(fmt,))
+	str = " "
+	for v in vs
+		str = str * v * ", "
+	end
+	str
+end
+		
+
+# ╔═╡ 53b33513-be2f-461a-b531-09ebe3876709
+function cc_and_nof_str(cc, fmt)
+	m   = m_from_cc(cc)
+	return vect_to_md(cc, fmt), vect_to_md(m, fmt)
+end
+	
+	
+
+# ╔═╡ 174428d2-0eaf-4a2b-ad77-bee4d7962147
+@test m_from_cc(ccfbig1si) ≈ m_from_cc2.(ccfbig1si)
+
 # ╔═╡ 410fc4ad-ea57-4372-86ed-deabb2ffb826
-sifbi = lfbi.Powder("FBI-Standard", 2.27e-5mmol/mg, 30mg/cm^2)
+sifbi = lfbi.Powder("FBI-Standard", 2.27e-5mmol/mg, 30mg/cm^2);
 
 # ╔═╡ fbde913d-a3c4-46fe-b834-3d44c5737e37
-sifbiba = lfbi.Powder("FBIBa-Standard", 7.38e-8mmol/mg, 30mg/cm^2)
+sifbiba = lfbi.Powder("FBIBa-Standard", 7.38e-8mmol/mg, 30mg/cm^2);
 
 # ╔═╡ 10b2ad4e-c0e6-4655-9f7c-cbdf84744e85
-nfbi = f"\%7.2g(lfbi.nof_molecules_area(sifbi, 1μm^2))"
+nfbi = f"\%7.2g(lfbi.nof_molecules_area(sifbi, 1nm^2))";
 
 # ╔═╡ 69ff3a77-40c1-4eec-bfa8-4333d50d64a7
-nfbiba = f"\%7.2g(lfbi.nof_molecules_area(sifbiba, 1μm^2))"
+nfbiba = f"\%7.2g(lfbi.nof_molecules_area(sifbiba, 1nm^2))";
 
-# ╔═╡ 8fee2554-8c20-41ea-8dac-1656ccdb24f7
-md" Notice that the reference concentration, assuming that silica is packed with a density of 30 mg/cm2 is high. In a monolayer with a density of 1 mol/nm^2 one expects 10^6 mol/μ^2, while the reference concentration for FBI is $nfbi mol/μ^2 and the reference concentration for the chelated FBI is $nfbiba mol/μ^2 "
+# ╔═╡ 8f341a3a-6bf4-42ad-8188-ac141ad7cf45
+sccfbig1si, smfbig1si = cc_and_nof_str(ccfbig1si, "%7.1g");
+
+# ╔═╡ 2f33bbc8-6c21-44d8-8342-d0007d31d35c
+sccfbibag1si, smfbibag1si = cc_and_nof_str(ccfbibag1si, "%7.1g");
+
+# ╔═╡ fc8956f0-64a0-4534-86b7-d468a5039775
+sccfbig2si, smfbig2si = cc_and_nof_str(ccfbig2si, "%7.1g");
+
+# ╔═╡ 526059bb-cd67-4120-9b27-88dd8b5316fd
+sccfbibag2si, smfbibag2si = cc_and_nof_str(ccfbibag2si, "%7.1g");
+
+# ╔═╡ 1b515b5c-3221-4c57-85db-1c9dde9f63af
+md" #### Values of concentrations versus number of molecules:
+
+Notice that the reference concentration, assuming that silica is packed with a density of 30 mg/cm2 is high. In a monolayer one expects a density of 1 molecule/nm^2 while the reference concentration for FBI is $nfbi mol/nm^2 and the reference concentration for the chelated FBI is $nfbiba mol/nm^2. More specifically:
+
+- FBI   G1: cc (mmol/mg) = $(sccfbig1si) : mol/nm2 = $(smfbig1si) 
+- FBIBa G1: cc (mmol/mg) = $(sccfbibag1si) : mol/nm2 = $(smfbibag1si)
+- FBI   G2: cc (mmol/mg) = $(sccfbig2si) : mol/nm2 = $(smfbig2si) 
+- FBIBa G12 cc (mmol/mg) = $(sccfbibag2si) : mol/nm2 = $(smfbibag2si)
+"
+
+# ╔═╡ 88392a84-fb85-4f41-b842-5eefb61c31cd
+begin
+	plot(ccfbig1si, m_from_cc(ccfbig1si),
+		 shape  = :circle,
+		 legend = :false,
+		 xaxis=:log,
+		 yaxis=:log,
+		 fmt = :png)
+
+
+	xlabel!("Concentration (M)")
+	ylabel!(" number o molecules per nm^2 ")
+	title!("FBI in Silica: nof molecules vs concentration")
+end
 
 # ╔═╡ 67d8955d-55fe-4de2-baae-95aa9078aed5
 md"## Discussion
 
 The non-linearity of response will be likely due to self-absorption at large concentrations. At the same time, large concentration appears to shift the spectrum of FBI towards green (red), which in principle is positive.
+
+However, a monolayer will be much less dense than the reference sample. **At low density, the fluorescence of the free molecules shifts towards blue and the chromatic separation may be compromised**. 
 
 On the other hand, the behaviour of a single FBI chelated molecule surrounded by unchelated FBI molecules is hard to predict. It could be that the molecule does not suffer self-absorption, but is difficult to quantify. 
 "
@@ -629,6 +733,8 @@ On the other hand, the behaviour of a single FBI chelated molecule surrounded by
 # ╟─45bdd766-9131-11eb-31dc-f9ee1ced0db9
 # ╟─f28f308a-4f5c-4dfe-8831-94de433c8fb9
 # ╟─a1af2f43-a6f4-4b5d-a882-abf91f109a44
+# ╠═671732ee-b2df-4b17-a29a-c6854f5e6548
+# ╟─e60f09c7-92c9-484a-80ae-a857fe4740a4
 # ╟─f4f2ce5a-5ab7-4a9f-8c64-5db8f37a672f
 # ╟─708d8cc6-40e2-4d5d-8039-7502ccb32d45
 # ╟─d8c4f687-b853-4780-ba57-b09b0cacd46f
@@ -650,11 +756,15 @@ On the other hand, the behaviour of a single FBI chelated molecule surrounded by
 # ╟─8ce1b48d-8ef6-4cf0-8460-bb366e657fb4
 # ╠═17b14af4-bf8f-4ead-a151-ca79decf40e0
 # ╠═9afb1a36-a5d2-4718-b926-55c77bb3b26d
+# ╠═6a84549d-c6cd-4467-b8fa-dc9db4774dd5
 # ╠═c485625b-c653-4b37-be27-598ba3c8010c
+# ╠═b239005c-c9ae-4b0d-bd99-d5e5bc373459
 # ╠═a4bd50fb-0268-4564-b9a1-9721ba592e60
 # ╠═ff0d10c5-89e2-4cbc-81d9-7276986168dd
+# ╠═8e50d7e8-65c3-4e97-8224-488b722cc6b3
 # ╠═ab7210ff-8365-488a-b127-d4ad9e0e2c3c
-# ╠═2bc8d78f-1412-45e3-9c96-04e3683e3c39
+# ╠═2b3937ad-0b95-4459-893f-248c6591bf30
+# ╟─2bc8d78f-1412-45e3-9c96-04e3683e3c39
 # ╠═9820feab-3598-470a-a6dd-5ba581e84716
 # ╠═5aa22150-0f63-44c7-8a9c-7cbdf305a11a
 # ╠═70f940ca-5532-4432-83c8-eabd0b3af8a6
@@ -696,9 +806,20 @@ On the other hand, the behaviour of a single FBI chelated molecule surrounded by
 # ╠═9736476c-c317-43dc-b7c9-71d62155b10d
 # ╠═ee0f3796-1474-4f10-be97-f64c8237cdf8
 # ╟─975542df-8d55-405c-adfb-3a310611e374
+# ╟─845656ec-bc58-4fec-9589-4c7d91b4c6f6
+# ╟─2bf7245f-097d-492e-95e5-ff3f10f2c2b1
+# ╟─12d064c7-d239-4cb6-ae5a-982e3be5f1fa
+# ╟─9088927d-995f-4422-bc5a-8e6faa5dc926
+# ╟─53b33513-be2f-461a-b531-09ebe3876709
+# ╟─174428d2-0eaf-4a2b-ad77-bee4d7962147
 # ╠═410fc4ad-ea57-4372-86ed-deabb2ffb826
 # ╠═fbde913d-a3c4-46fe-b834-3d44c5737e37
 # ╠═10b2ad4e-c0e6-4655-9f7c-cbdf84744e85
 # ╠═69ff3a77-40c1-4eec-bfa8-4333d50d64a7
-# ╟─8fee2554-8c20-41ea-8dac-1656ccdb24f7
-# ╠═67d8955d-55fe-4de2-baae-95aa9078aed5
+# ╠═8f341a3a-6bf4-42ad-8188-ac141ad7cf45
+# ╠═2f33bbc8-6c21-44d8-8342-d0007d31d35c
+# ╠═fc8956f0-64a0-4534-86b7-d468a5039775
+# ╠═526059bb-cd67-4120-9b27-88dd8b5316fd
+# ╟─1b515b5c-3221-4c57-85db-1c9dde9f63af
+# ╠═88392a84-fb85-4f41-b842-5eefb61c31cd
+# ╟─67d8955d-55fe-4de2-baae-95aa9078aed5
