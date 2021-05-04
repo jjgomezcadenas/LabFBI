@@ -495,7 +495,7 @@ md"#### Dependence of FBI G2  with concentration
 "
 
 # ╔═╡ f114b802-5f6d-4a52-a4e1-54a4173779fc
-pfbig2soldf = plot_df(fbig2soldf, colg2soldf, false, markercolors, "λ(nm)", "I (au)", "G2 Solution", :topright);
+pfbig2soldf = plot_df(fbig2soldf, colg2soldf, false, markercolors, "λ(nm)", "I (au)", "G2 Solution", :topright)
 
 # ╔═╡ 0121ab11-145f-4985-92dc-e8f1d67cbe0c
 pafbig2sol=  plot_df_ivsc(fbig2soldf, colg2soldf, "I vs C FBI-G2 SOL");
@@ -514,11 +514,11 @@ pfbibag2sidf = plot_df(fbibag2sidf, colbag2sidf, false, markercolors, "λ(nm)", 
 pafbibag2si=  plot_df_ivsc(fbibag2sidf, colbag2sidf, "I vs C FBIBa-G2 Si");
 
 # ╔═╡ c4f72191-2c19-4423-95d2-06bcc5b8ff7f
-pnfbig2soldf = plot_df(fbig2soldf, colg2soldf, true, markercolors, "λ(nm)", "I (au)", "G2 Solution PDF", :topright);
+pnfbig2soldf = plot_df(fbig2soldf, colg2soldf, true, markercolors, "λ(nm)", "I (au)", "G2 Solution PDF", :topright)
 
 # ╔═╡ 97e7a84b-90b7-48e4-9c9d-95f4224f5c7c
 pnfbig2sidf = plot_df(fbig2sidf, colg2sidf, true, markercolors, "λ(nm)", "I (au)", 
-	"G2 Silica PDF", :topright);
+	"G2 Silica PDF", :topright)
 
 # ╔═╡ 8eb4af33-e288-45bf-9907-05db62b28a74
 pnfbibag2sidf = plot_df(fbibag2sidf, colbag2sidf, true, markercolors, "λ(nm)", "I (au)", "G2 FbiBa Silica PDF", :topright);
@@ -581,8 +581,8 @@ solfbiba = lfbi.Solution("FBIBa-Standard-Solution", 5e-5mol/L);
 
 # ╔═╡ ee0f3796-1474-4f10-be97-f64c8237cdf8
 begin
-	C=exp10.(range(-7,stop=-3,length=100)) * M
-	NOF = lfbi.nof_molecules_volume.(C, (1μL,))
+	C=exp10.(range(-9,stop=-6,length=100)) * M
+	NOF = lfbi.nof_molecules_volume.(C, (1nm^3,))
 	plot(C/M, NOF,
 		 xaxis=:log, yaxis=:log,
     	 colour = :blue,
@@ -781,7 +781,7 @@ On the other hand, the behaviour of a single FBI chelated molecule surrounded by
 # ╟─ca2af6eb-f830-4ab7-b378-a6fab79e751d
 # ╠═f114b802-5f6d-4a52-a4e1-54a4173779fc
 # ╠═0121ab11-145f-4985-92dc-e8f1d67cbe0c
-# ╠═a733d819-deb9-4f2b-96cf-7af90e0cb4f5
+# ╟─a733d819-deb9-4f2b-96cf-7af90e0cb4f5
 # ╠═60666285-6fd5-4cff-884d-2e32a139b748
 # ╠═5de64351-5877-4c39-ad96-63b97f7b2f33
 # ╠═a314fde3-d779-475f-8e11-6bdd87ad44e7
@@ -806,10 +806,10 @@ On the other hand, the behaviour of a single FBI chelated molecule surrounded by
 # ╠═9736476c-c317-43dc-b7c9-71d62155b10d
 # ╠═ee0f3796-1474-4f10-be97-f64c8237cdf8
 # ╟─975542df-8d55-405c-adfb-3a310611e374
-# ╟─845656ec-bc58-4fec-9589-4c7d91b4c6f6
+# ╠═845656ec-bc58-4fec-9589-4c7d91b4c6f6
 # ╟─2bf7245f-097d-492e-95e5-ff3f10f2c2b1
-# ╟─12d064c7-d239-4cb6-ae5a-982e3be5f1fa
-# ╟─9088927d-995f-4422-bc5a-8e6faa5dc926
+# ╠═12d064c7-d239-4cb6-ae5a-982e3be5f1fa
+# ╠═9088927d-995f-4422-bc5a-8e6faa5dc926
 # ╟─53b33513-be2f-461a-b531-09ebe3876709
 # ╟─174428d2-0eaf-4a2b-ad77-bee4d7962147
 # ╠═410fc4ad-ea57-4372-86ed-deabb2ffb826
