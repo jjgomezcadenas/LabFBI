@@ -152,7 +152,7 @@ begin
 end
 
 # ╔═╡ 8ec6de87-0f1e-49a4-be7d-c3d9b6233718
-LabPlots.plot_xy(Lx/nm, Ex/eV, 
+lpi.LabPlots.plot_xy(Lx/nm, Ex/eV, 
 	        "λ (nm)", "E (eV)", "Photon energy as a function of wavelength")
 
 
@@ -179,56 +179,74 @@ md"- time = $tt second"
 # ╔═╡ 28c0a218-8666-11eb-291a-71fd93c60da5
 de = uconvert(mJ, lfi.LabFbi.delivered_energy(l400P1mw, tt * 1.0s))
 
-# ╔═╡ 586958c7-c69a-483a-b7c8-eb065db96f3b
-md"## Field of View (FOV)
-- Corresponds to the region (area, volume) iluminated by the laser
-- It is defined by a diameter and a length (or thickness). 
-- For example, for a gaussian laser beam, the FOV can be defined in terms of the σ of the beam (in xy and in z)
-"
+# ╔═╡ 943550b1-7a39-4e99-9054-4b8e1c584b6f
+md"### Objective"
 
-# ╔═╡ 013420a8-9129-11eb-0d7f-ab8fb7c70786
-md"#### FOV and photon density"
+# ╔═╡ 0bddff38-99ad-475e-9515-579de07e8ab3
+obj = lfi.LabFbi.Objective("Topatu", 0.6, 75.0)
 
-# ╔═╡ bfa4e6ef-469d-4552-b1b3-8bc1240dc1eb
-md"- Define the diameter of the FoV"
+# ╔═╡ 77a68d3b-8fc5-4ef6-bb20-3140779e6535
+gl400P1mw = lfi.LabFbi.GaussianLaser(l400P1mw, obj)
 
-# ╔═╡ 274494c9-7ec3-4635-8e7d-6b5bbf27cef0
-@bind fovd NumberField(1:10; default=1)
-
-# ╔═╡ c89247fa-e827-4cea-b080-50df89bcfc20
-md"- Define the z of the FoV"
-
-# ╔═╡ 8fe41c56-b0c1-4635-8977-713f5e6b496e
-@bind fovz NumberField(1:10; default=1)
-
-# ╔═╡ 162d5452-8741-49aa-a219-c9f5aec83b82
-md"- Define the units"
-
-# ╔═╡ 35357f1b-f1fa-4a88-b6be-176dfb695585
-39182/6778
-
-# ╔═╡ 0f84598d-32ad-43bc-8a9f-eb78a08d81b7
-
-
-# ╔═╡ 910d2777-321a-4548-bafe-3314c8f29436
-
-
-# ╔═╡ ef55c4be-1cfd-48f3-901e-301ae3c3b607
-@bind fovu TextField(default="μm")
-
-# ╔═╡ 7d25636f-a9e6-446a-879b-a053db2c310b
-fstr(2, "%5.3g")
-
-# ╔═╡ c1288245-be28-4216-9ca3-d6723dd6ff34
-function unt(val, unit)
-	ex = quote
-	$val * $unit
-	end
-	eval(ex)
+# ╔═╡ bb2e22d4-a54e-4519-9a65-89dd1f82a77b
+begin
+	w0s = lti.LabTools.to_fstr(gl400P1mw.w0/nm,"%5.2g")
+	zrs = lti.LabTools.to_fstr(gl400P1mw.zr/nm,"%5.2g")
 end
 
-# ╔═╡ 513be477-3279-4169-b254-4058c1a2baa2
-typeof(unt(2, mm))
+# ╔═╡ 2cd0e291-da66-489a-90af-38ce273c950d
+md"### Diffractive limit"
+
+# ╔═╡ 7f081083-3b93-4100-ac1f-4866708fad77
+dl = lfi.LabFbi.diffraction_limit(gl400P1mw)
+
+# ╔═╡ 90fea6e7-9803-4833-8f66-f339ed9dd9b2
+md"### Gaussian Laser 
+- The TOPATU laser is approximately gaussian.
+- A gaussian laser is defined with a laser and its objective.
+- The waist of the laser is $w0s nm
+- The waist in z (zr) is $zrs nm
+- The diffraction limit is $(lti.LabTools.to_fstr(dl/nm,\"%5.2g\")) nm
+"
+
+# ╔═╡ 586958c7-c69a-483a-b7c8-eb065db96f3b
+md"### Field of View (FOV)
+- Corresponds to the region (area, volume) iluminated by the laser
+- It is defined by a diameter and a length (or thickness). 
+- For example, for a gaussian laser beam, the FOV can be defined in terms of w0 and zr, or in terms of the diffraction limit
+"
+
+# ╔═╡ 4589e4cc-dd61-4239-b027-b135c3525f42
+fovdl = lfi.LabFbi.Fov(dl, 2*gl400P1mw.zr)
+
+# ╔═╡ 30371eba-26ac-429a-bb2e-30de65091288
+md"### Spatial distribution of a guassian beam"
+
+# ╔═╡ b78e625e-4c71-4f1c-8711-cfe90c27519b
+begin
+	R = collect(lti.LabTools.logrange(1, 500, 100))
+	gir0(z) = lfi.LabFbi.gI(gl400P1mw, z*nm, 0*nm)
+	giz0(r) = lfi.LabFbi.gI(gl400P1mw, 0*nm, r*nm)
+	piz0 = lpi.LabPlots.plot_xy(R, giz0.(R), 
+		   "R(nm)", "IG(z0)", "Beam profile in R at Z= 0");
+	pir0 = lpi.LabPlots.plot_xy(R, gir0.(R), 
+		   "Z(nm)", "IG(r0)", "Beam profile in Z at R= 0");
+	plot(piz0,pir0, layout = (1, 2), legend=false, fmt = :png)
+end
+
+# ╔═╡ f0b9c27a-9623-48ee-b096-6a3fb56bc35c
+md" - Notice that essentially 100 % of the beam is contained in the FoV"
+
+# ╔═╡ 013420a8-9129-11eb-0d7f-ab8fb7c70786
+md"#### Photon density"
+
+# ╔═╡ fe18d00d-3fe9-4bf4-b926-2dcc12d513ab
+Ip = lfi.LabFbi.photon_density.((405nm,), Px, (fovdl.a,))
+
+# ╔═╡ 55046ba7-f5a6-4d9a-a767-3dcdb85bb1dc
+lpi.LabPlots.loglog_xy(Px/mW, Ip * μm^2/Hz, 
+	        "P (mW)", "ρ", "Photon density in FoV as a function of Power")
+
 
 # ╔═╡ 53f112f6-ba9f-4089-ae96-83baad162fcc
 md"- Define the power of the laser (in mW)"
@@ -236,31 +254,24 @@ md"- Define the power of the laser (in mW)"
 # ╔═╡ 990240b5-b30d-4c50-911c-42f01d7c98c3
 @bind lp NumberField(10^-1:10^3; default=0.1)
 
-# ╔═╡ 7ff6fe7c-9129-11eb-1805-0dd052ec01a8
-begin
-	fovnf = lfi.LabFbi.Fov(fovd*mm, 1μm)
-	I = lfi.LabFbi.photon_density(405nm, lp*mW, fovnf.a)
-end
-
 # ╔═╡ d0c7c8d5-e94b-434b-8920-c81688dfa5de
 begin
-	fovas = lti.LabTools.to_fstr(fovnf.a/mm^2,"%5.2g")
-	Is    = lti.LabTools.to_fstr(I/(Hz*mm^-2), "%5.2g")
+	Ixp = lfi.LabFbi.photon_density.(405nm, lp*mW, fovdl.a)
+	fovas = lti.LabTools.to_fstr(fovdl.a/nm^2,"%5.2g")
+	Is    = lti.LabTools.to_fstr(Ixp/(Hz*μm^-2), "%5.2g")
 	lps   = lti.LabTools.to_fstr(lp, "%5.2g")
 	end
 
 # ╔═╡ 877170f1-4f5c-438d-8949-854d3e892a2e
 md" 
-- FoV diameter (mm)       = $fovd 
-- Fov area (``mm^{2}``)         = $fovas
-- Laser power (mW)        = $lps
-- Laser density (Hz/``mm^{2}``) = $Is
+- FoV diameter        = $(fovdl.d)  
+- Fov area            = $fovas nm2
+- Laser power         = $lps mW
+- Photon density       = $Is (Hz/``\mu m^{2}``)
 "
 
 # ╔═╡ a80e6642-908c-11eb-3ac3-6737f11f4eff
-md"#### Number of photons produced in solution:
-- Concentration, Fov and laser power are tuned by parameters
-- Use the measured cross section for FBI"
+md"## Fluorescence in solution"
 
 # ╔═╡ 9cb2c012-608a-4cff-b312-88bd2071da1f
 md"#### Molar extinction coefficient
@@ -269,9 +280,9 @@ md"#### Molar extinction coefficient
 "
 
 # ╔═╡ cd707e24-df49-4f74-9890-0cdfcc1b9296
-adf = LabFbi.load_df_from_csv(datadir("fbi"),
+adf = lfi.LabFbi.load_df_from_csv(datadir("fbi"),
 	                          "molar_extinction_coefficient_G1G2.csv", 
-	                          LabFbi.enG) 
+	                          lfi.LabFbi.enG) 
 
 
 # ╔═╡ 482b76cf-b3fb-4a30-8678-56ebe539fc5e
@@ -290,14 +301,18 @@ begin
 end
 
 # ╔═╡ aaf97203-1412-493f-94cb-75591ff981f7
-md"##### Emitted fluorescence"
+md"#### Emitted fluorescence
+
+- Laser power    = $lp mW
+- Photon density = $Is (Hz/``\mu m^{2}``)
+"
 
 # ╔═╡ 4ed47097-0d51-4639-a19f-38bbaa6c508d
 begin
-	γfbi325G1 = lfi.LabFbi.fluorescence(fbi325G1, I)
-	γfbiba325G1 = lfi.LabFbi.fluorescence(fbiba325G1, I)
-	γfbi405G1 = lfi.LabFbi.fluorescence(fbi405G1, I)
-	γfbiba405G1 = lfi.LabFbi.fluorescence(fbiba405G1, I)
+	γfbi325G1 = lfi.LabFbi.fluorescence(fbi325G1, Ixp)
+	γfbiba325G1 = lfi.LabFbi.fluorescence(fbiba325G1, Ixp)
+	γfbi405G1 = lfi.LabFbi.fluorescence(fbi405G1, Ixp)
+	γfbiba405G1 = lfi.LabFbi.fluorescence(fbiba405G1, Ixp)
 end
 
 # ╔═╡ 45fd4819-12bd-449e-9f37-5885cf3604ca
@@ -317,9 +332,6 @@ md""" #### Fluorescence per molecule in FoV
 | 405    | $γfbi405G1s| $γfbiba405G1s   | 
 """
 
-# ╔═╡ dc32d330-8cb5-498a-a9f5-a9cd2359baf4
-md"## Solution"
-
 # ╔═╡ ccb649f8-0516-4a64-8ccc-5af13a7fe6e1
 md""" #### Concentration in solution"""
 
@@ -338,119 +350,50 @@ md"- Set power (in M)"
 # ╔═╡ 21c6d2f8-519e-41ff-8895-ae3c77eb7a02
 cs = csu * csp ;
 
-# ╔═╡ 8b918c37-dcc2-4f23-b0e5-bced29d3c654
-md"- The concentration of FBI in solution is $(lti.LabTools.to_fstr(cs, \"%7.1g\")) M"
-
 # ╔═╡ 5347f077-66b4-45e6-a2f1-b0e6f52b0768
 solfbi = lfi.LabFbi.Solution("FBI solution", cs*M)
 
-# ╔═╡ 844b4b75-4285-4449-9635-64d00e2443b1
-ρfbi = nofv(solfbi, vol::Unitful.Volume)
-
-# ╔═╡ e9185f30-23d5-493c-9ac3-7b08201d8354
-md"- Number of molecules per unit volume"
-
-# ╔═╡ e39b6c3b-1b35-4e3d-a77f-ba1f8a574a86
-md"## Silica"
-
-# ╔═╡ dd9c1fd6-742f-4548-ad05-22977ccb2608
-md"- The following two fields are used to define the concentration of the FBI solution in silica:
-- First field: set the value in front of exponent of concentration in mmol/mg
-- Second field: set the power"
-
-# ╔═╡ 933a08d7-d9c9-4921-a9f8-cb6a90eb6940
-@bind c1 NumberField(2:0.1:3; default=2.27)
-
-# ╔═╡ ae44aa4d-54bd-42d7-be33-58f7980832ad
-@bind c1p NumberField(1e-8:1e-5; default=1e-5)
-
-# ╔═╡ 8f910b3e-bfa8-4774-a279-02db079e275c
-cc = c1 * c1p ;
-
-# ╔═╡ 1ee7d4cf-b25f-4b04-a194-7d729fa86beb
-md"- The concentration of FBI in the silica powder is $(lti.LabTools.to_fstr(cc, \"%7.1g\")) mmol/mg"
-
-# ╔═╡ 991eb30d-c5eb-4ed6-978e-1556961df89a
-fbiSiPo = lfi.LabFbi.Powder("FBI-SiPo", cc*mmol/mg, 30mg/cm^2)
-
-# ╔═╡ 0973ae7d-cb35-4e0d-95cb-fe0258114e27
-nmFovFbiSiPo = lfi.LabFbi.nofa(fbiSiPo, fovnf.a)
-
-# ╔═╡ 17e37f70-41da-4400-9c23-f2c85ee8927c
-md"- The numberof FBI molecules in a spot of  the silica powder is $(lti.LabTools.to_fstr(nmFovFbiSiPo, \"%7.2g\"))"
-
-# ╔═╡ c620fc65-fa0e-47fe-a8dc-b04e2d7064b7
+# ╔═╡ 087da75f-f6a3-42f7-a5ee-c36d25326dcd
 begin
-γfovfbi325G1    =  γfbi325G1 * nmFovFbiSiPo
-γfovfbiba325G1  =  γfbiba325G1 * nmFovFbiSiPo
-γfovfbi405G1    =  γfbi405G1 * nmFovFbiSiPo
-γfovfbiba405G1  =  γfbiba405G1 * nmFovFbiSiPo
+	ρfbi = lfi.LabFbi.nofv(solfbi, fovdl.v)
+	ρfbis = lti.LabTools.to_fstr(ρfbi, "%5.2g") 
 end
 
-# ╔═╡ 6f6e61db-e9b1-43bc-a68a-38aba9fccfb9
+# ╔═╡ 8b918c37-dcc2-4f23-b0e5-bced29d3c654
+md"
+- The concentration of FBI in solution is $(lti.LabTools.to_fstr(cs, \"%7.1g\")) M
+- This corresponds to $ρfbis in the diffractive spot volume
+"
+
+# ╔═╡ ea543fe2-fc1d-42fe-b563-8fca369b1974
 begin
-	γfovfbi325G1s = lti.LabTools.to_fstr(γfovfbi325G1/Hz,"%7.3g")
-	γfovfbiba325G1s = lti.LabTools.to_fstr(γfovfbiba325G1/Hz,"%7.3g")
-	γfovfbi405G1s = lti.LabTools.to_fstr(γfovfbi405G1/Hz,"%7.3g")
-	γfovfbiba405G1s = lti.LabTools.to_fstr(γfovfbiba405G1/Hz,"%7.3g")
+	γfbi325G1Vol   = γfbi325G1 * ρfbi
+	γfbiba325G1Vol = γfbiba325G1 * ρfbi
+	γfbi405G1Vol   = γfbi405G1 * ρfbi
+	γfbiba405G1Vol = γfbiba405G1 * ρfbi
 end
 
-# ╔═╡ b844a604-a9b4-4b83-8d0c-c4711c3bc170
-md""" #### Fluorescence emitted by Silica in FoV
+# ╔═╡ eda71706-2771-47a6-8435-0274ef4b77cd
+begin
+	γfbi325G1Vs = lti.LabTools.to_fstr(γfbi325G1Vol/Hz,"%7.3g")
+	γfbiba325G1Vs = lti.LabTools.to_fstr(γfbiba325G1Vol/Hz,"%7.3g")
+	γfbi405G1Vs = lti.LabTools.to_fstr(γfbi405G1Vol/Hz,"%7.3g")
+	γfbiba405G1Vs = lti.LabTools.to_fstr(γfbiba405G1Vol/Hz,"%7.3g")
+end
+
+# ╔═╡ a7f980e2-4910-464f-8b83-155fcfba5501
+md""" #### Fluorescence emitted by the solution
 
 | λ (nm) | Fbi G1 (Hz) | FbiBa G1 (Hz)
 |:---------- | ---------- |:------------:|
-| 325    | $γfovfbi325G1s| $γfovfbiba325G1s | 
-| 405    | $γfovfbi405G1s| $γfovfbiba405G1s   | 
+| 325    | $γfbi325G1Vs| $γfbiba325G1Vs | 
+| 405    | $γfbi405G1Vs| $γfbiba405G1Vs   | 
 """
 
 # ╔═╡ afe6ab7a-9133-11eb-1f9f-dd7c0b27e4d0
-md"#### Number of photons reaching CCDs (in the absence of filters):
- - non-focused setup
- - only geometrical acceptance taken into account"
+md"### Number of photons reaching CCDs"
 
-# ╔═╡ 67b2b186-9139-11eb-2f29-f9f36be38b6f
-begin
-	d_target_ccd = 350.0mm
-	D_ccd        = 25.4mm
-end
-
-# ╔═╡ 55dc84a0-9139-11eb-1694-bba96f7bad9e
-ga = lfi.LabFbi.geometrical_acceptance(d_target_ccd/mm, D_ccd/mm)
-
-# ╔═╡ 3d52a298-7ee2-4237-9f1f-39448d624867
-md"- The geometrical acceptance for the unfocused setup (Laser light is collected by a lens of $(D_ccd/mm) mm located at $(d_target_ccd/mm) mm from the target) is ga = $(lti.LabTools.to_fstr(ga, \"%7.2g\")) "
-
-# ╔═╡ a7bd7368-6bf3-4bac-9483-3b61528f20c7
-begin
-nfovfbi325G1    =  γfbi325G1 * nmFovFbiSiPo   * ga
-nfovfbiba325G1  =  γfbiba325G1 * nmFovFbiSiPo * ga
-nfovfbi405G1    =  γfbi405G1 * nmFovFbiSiPo   * ga
-nfovfbiba405G1  =  γfbiba405G1 * nmFovFbiSiPo * ga
-end
-
-# ╔═╡ e98c14f8-433a-4f58-a2b2-376b27570b6f
-begin
-	nfovfbi325G1s = lti.LabTools.to_fstr(nfovfbi325G1/Hz,"%7.3g")
-	nfovfbiba325G1s = lti.LabTools.to_fstr(nfovfbiba325G1/Hz,"%7.3g")
-	nfovfbi405G1s = lti.LabTools.to_fstr(nfovfbi405G1/Hz,"%7.3g")
-	nfovfbiba405G1s = lti.LabTools.to_fstr(nfovfbiba405G1/Hz,"%7.3g")
-end
-
-# ╔═╡ 1f0e38e5-3583-4d41-b95d-a7934ccb6a4c
-md""" #### Fluorescence Reaching CCD, no objective only geometrical acceptance
-
-| λ (nm) | Fbi G1 (Hz) | FbiBa G1 (Hz)
-|:---------- | ---------- |:------------:|
-| 325    | $nfovfbi325G1s| $nfovfbiba325G1s | 
-| 405    | $nfovfbi405G1s| $nfovfbiba405G1s   | 
-"""
-
-# ╔═╡ f96e9b12-9139-11eb-08cb-5319bca7a01d
-md"## Setup
-- Setup includes an objective (if present), a CCD to collect light and a collection of filters"
-
-# ╔═╡ b4badd12-8671-11eb-1f1b-69b36be8f7e4
+# ╔═╡ e2525056-d023-49c8-b086-f9a6debecb9e
 begin
 	naL = collect(0.1:0.05:1)
 	obL = [lfi.LabFbi.Objective("Nikon-SLVD", na, 100) for na in naL]
@@ -460,8 +403,52 @@ begin
 
 	xlabel!("numerical aperture")
 	ylabel!("Transmission")
-	title!("Tranmission as a function of NA")
+	title!("Tranmission of the objective as a function of NA")
 end
+
+# ╔═╡ 67b2b186-9139-11eb-2f29-f9f36be38b6f
+begin
+	to = lfi.LabFbi.transmission(obj)
+	tos = lti.LabTools.to_fstr(to, "%5.2g") 
+end
+
+# ╔═╡ 38979d58-a88f-4e3c-ba0e-e0ed7675054d
+md" 1. TOPATU objective:
+- NA           = $(obj.NA) 
+- Transmision  = $tos"
+
+# ╔═╡ a7bd7368-6bf3-4bac-9483-3b61528f20c7
+begin
+	nfbi325G1Vol   = γfbi325G1Vol * to
+	nfbiba325G1Vol = γfbiba325G1Vol * to
+	nfbi405G1Vol   = γfbi405G1Vol * to
+	nfbiba405G1Vol = γfbiba405G1Vol * to
+	
+	nVs= lti.LabTools.to_fstr.([nfbi325G1Vol,
+							nfbiba325G1Vol,
+							nfbi405G1Vol,
+							nfbiba405G1Vol]./Hz,"%7.3g")
+end
+
+# ╔═╡ 47e4f919-3b72-47b9-8389-4a62587bb76b
+md""" #### Fluorescence transmitted by the objective
+
+| λ (nm) | Fbi G1 (Hz) | FbiBa G1 (Hz)
+|:---------- | ---------- |:------------:|
+| 325    | $(nVs[1])| $(nVs[2]) | 
+| 405    | $(nVs[3])| $(nVs[4])   | 
+"""
+
+# ╔═╡ f96e9b12-9139-11eb-08cb-5319bca7a01d
+md"## Topatu setup
+- Laser
+- Objective
+- Filters
+- CCD
+"
+
+# ╔═╡ 4624886f-f61b-4eaa-8a08-f275d74e9ac5
+md"### CCD"
 
 # ╔═╡ 79af9066-8680-11eb-0d91-15759e995f6c
 orca = lfi.LabFbi.ccd()
@@ -518,10 +505,10 @@ md"## Laser transport
 The TOPATU setup has two configurations: 
 - Band-430: Select light in the band 430 +- 10. This is done combining:
 
-	-The 405 nm BP filter (not needed for this calculation, since the beam is filtered before reaching the optical path, the filter contributes, together with other factors to a normalisation factor regarding power that needs to be computed)
-	-The 425 nm LP filter, which enters twice in the optical path and eliminates high frequencies (below 425 nm).
-	-The double noth which selects a region between 405 and 522 nm 
-	-The 430 nm BP filter, which selects the signal (FbIBa2+ peak) region
+  - The 405 nm BP filter (not needed for this calculation, since the beam is filtered before reaching the optical path, the filter contributes, together with other factors to a normalisation factor regarding power that needs to be computed)
+  - The 425 nm LP filter, which enters twice in the optical path and eliminates high frequencies (below 425 nm).
+  - The double noth which selects a region between 405 and 522 nm 
+  - The 430 nm BP filter, which selects the signal (FbIBa2+ peak) region
 
 - LP-450: Select light in the long pass Band 450 nm. This is done using the same combination than before except the last filter which is a 450 nm LP filter. This selects primarily the region of background (FBI).
 
@@ -536,9 +523,6 @@ filterSetBand430(λ) = map(x->flp425(x)^2 * fdn405(x) * fbp430(x) * orca(x), λ)
 
 # ╔═╡ 7ccc9401-2fee-4d5e-a6ca-9a863c60d5a6
 filterSetLP450(λ) = map(x->flp425(x)^2 * fdn405(x) * flp450(x) * orca(x), λ)
-
-# ╔═╡ 9bd87f70-24e6-4476-acf7-7647face1b3e
-flp425(430.0)^2 * fdn405(430.0) * fbp430(430.0) * orca(430.) ≈ filterSetBand430(430.0)
 
 # ╔═╡ a40e5ab4-ff6c-4cbc-a377-db60b76d1963
 @test flp425(460.0)^2 * fdn405(460.0) * flp450(460.0) * orca(460.0) ≈ filterSetLP450(460.0)
@@ -578,13 +562,6 @@ md" - The tranmission in the 430 band for 405 nm is $mdt405lp430. It follows tha
 
 # ╔═╡ 241a2416-6bc7-4804-b6ae-874d9336a02a
 md"### Filtered pdfs for FBI and FBIBa2+"
-
-# ╔═╡ 23fabeb9-a947-4d44-9da2-a929cf9db6a4
-md"
-- Get the spectrum from FBI and FBIBa powder
-- Notice that the discrimination between both species depends both of their relative brightness and their shape (e.g, chromatic separation between species). In Silica powder, with standard concentrations, the response of both species is described by the data below. 
-- However, the response expected in a monolayer cannot be extrapolated from the silica measurements, since concentrations of free and chelated molecules can have an impact in their relative brightness. 
-"
 
 # ╔═╡ f45d93f2-cc4d-4395-b9f3-f9a49983b8e2
 begin
@@ -636,6 +613,19 @@ filteredFbi450LP(λ) = map(x->filterSetLP450(x) * gfbi.pdf(x), λ)
 # ╔═╡ 6a5f6e6f-06cb-46cd-bab4-f3a0778af2b6
 filteredFbiBa450LP(λ) = map(x->filterSetLP450(x) * gfbiba.pdf(x), λ)
 
+# ╔═╡ 29ad555a-932b-4ee2-96c0-1e5550f7a1fd
+begin
+	n325FbiG1F430BP(λ) = filteredFbi430BP(λ) * nfbi325G1Vol/Hz
+	n325FbiBaG1F430BP(λ) = filteredFbiBa430BP(λ) * nfbiba325G1Vol/Hz
+	n325FbiG1F450LP(λ) = filteredFbi450LP(λ) * nfbi325G1Vol/Hz
+	n325FbiBaG1F450LP(λ) = filteredFbiBa450LP(λ) * nfbiba325G1Vol/Hz
+
+	n405FbiG1F430BP(λ) = filteredFbi430BP(λ) * nfbi405G1Vol/Hz
+	n405FbiBaG1F430BP(λ) = filteredFbiBa430BP(λ) * nfbiba405G1Vol/Hz
+	n405FbiG1F450LP(λ) = filteredFbi450LP(λ) * nfbi405G1Vol/Hz
+	n405FbiBaG1F450LP(λ) = filteredFbiBa450LP(λ) * nfbiba405G1Vol/Hz
+end
+
 # ╔═╡ 67709bf1-298a-4371-8f91-1b6fab98ef6b
 begin
 	pfilteredFbi430BP =lpi.LabPlots.plot_filterset(filteredFbi430BP, "filteredFbi430BP", 400.0:700.0);
@@ -648,103 +638,105 @@ end
 # ╔═╡ f613b185-0f04-4926-8e7d-f1d9d19046b5
 plot(pfilteredFbi430BP, pfilteredFbiBa430BP, pfilteredFbi450LP, pfilteredFbiBa450LP, layout = (2, 2), legend=false, fmt = :png)
 
-# ╔═╡ 95ce45d1-d000-46c4-9996-2aa6db2876cf
-md"### Expected response"
+# ╔═╡ 3ab61c40-38a1-4654-99c5-6d5f6f36ea85
+begin
+	pn325FbiG1F430BP =lpi.LabPlots.plot_filterset(n325FbiG1F430BP, 
+		"n325FbiG1F430BP", 400.0:700.0)
+	pn325FbiBaG1F430BP =lpi.LabPlots.plot_filterset(n325FbiBaG1F430BP, "n325FbiBaG1F430BP", 400.0:700.0)
+	pn325FbiG1F450LP = lpi.LabPlots.plot_filterset(n325FbiG1F450LP, "n325FbiG1F450LP", 400.0:700.0)
+	pn325FbiBaG1F450LP =lpi.LabPlots.plot_filterset(n325FbiBaG1F450LP, "n325FbiBaG1F450LP", 400.0:700.0)
+	true
+end
 
-# ╔═╡ cf7dc98f-da76-4017-a967-8c33455406bc
-md"#### Filtered spectra"
+# ╔═╡ 74ad1f8d-1a38-48de-a158-7f4c09bc7031
+begin
+	pn405FbiG1F430BP =lpi.LabPlots.plot_filterset(n405FbiG1F430BP, 
+		"n405FbiG1F430BP", 400.0:700.0)
+	pn405FbiBaG1F430BP =lpi.LabPlots.plot_filterset(n405FbiBaG1F430BP, "n405FbiBaG1F430BP", 400.0:700.0)
+	pn405FbiG1F450LP = lpi.LabPlots.plot_filterset(n405FbiG1F450LP, "n405FbiG1F450LP", 400.0:700.0)
+	pn405FbiBaG1F450LP =lpi.LabPlots.plot_filterset(n405FbiBaG1F450LP, "n405FbiBaG1F450LP", 400.0:700.0)
+	true
+end
 
-# ╔═╡ e6149377-2aff-4c87-8ab0-226c1c65c378
-lfi.LabFbi.fom(fbi::Gf, fbiba::Gf, λmin::Number, λmax::Number)
+# ╔═╡ 6b95832a-7c78-4ec9-891b-aaae5e382411
+plot(pn325FbiG1F430BP, pn325FbiBaG1F430BP, pn325FbiG1F450LP, pn325FbiBaG1F450LP, layout = (2, 2), legend=false, fmt = :png)
+
+# ╔═╡ 53dd2eaf-a0ac-41aa-a1c8-eb8c6daa9b17
+plot(pn405FbiG1F430BP, pn405FbiBaG1F430BP, pn405FbiG1F450LP, pn405FbiBaG1F450LP, layout = (2, 2), legend=false, fmt = :png)
+
+# ╔═╡ 6f9c9bfd-b533-4e0a-9a55-8cebaf773660
+begin
+	ccd325FbiG1F430BP = lfi.LabFbi.qpdf(n325FbiG1F430BP, 420.0, 440.0)
+	ccdn325FbiBaG1F430BP = lfi.LabFbi.qpdf(n325FbiBaG1F430BP, 420.0, 440.0)
+	ccdn325FbiG1F450LP = lfi.LabFbi.qpdf(n325FbiG1F450LP, 450.0, 700.0)
+	ccdn325FbiBaG1F450LP = lfi.LabFbi.qpdf(n325FbiBaG1F450LP, 450.0, 700.0)
+
+	ccd405FbiG1F430BP = lfi.LabFbi.qpdf(n405FbiG1F430BP, 420.0, 440.0)
+	ccdn405FbiBaG1F430BP = lfi.LabFbi.qpdf(n405FbiBaG1F430BP, 420.0, 440.0)
+	ccdn405FbiG1F450LP = lfi.LabFbi.qpdf(n405FbiG1F450LP, 450.0, 700.0)
+	ccdn405FbiBaG1F450LP = lfi.LabFbi.qpdf(n405FbiBaG1F450LP, 450.0, 700.0)
+
+end
+
+# ╔═╡ d5b81d54-ba97-43d8-852b-e511f65949ac
+nXs325= lti.LabTools.to_fstr.([ccd325FbiG1F430BP,
+							ccdn325FbiBaG1F430BP,
+							ccdn325FbiG1F450LP,
+							ccdn325FbiBaG1F450LP],"%7.3g")
+
+
+
+# ╔═╡ 8925c81a-6c09-4ff4-bd05-ea4137a5752a
+nXs405= lti.LabTools.to_fstr.([ccd405FbiG1F430BP,
+							ccdn405FbiBaG1F430BP,
+							ccdn405FbiG1F450LP,
+							ccdn405FbiBaG1F450LP],"%7.3g")
+
+# ╔═╡ 31c984a7-2a4f-4941-8824-3042d8bdfcb0
+md""" #### Fluorescence recorded by the CCD (in pes) λ = 325 nm 
+
+| Filter | Fbi G1 (Hz) | FbiBa G1 (Hz)
+|:---------- | ---------- |:------------:|
+| BP430    | $(nXs325[1])| $(nXs325[2]) | 
+| LP450    | $(nXs325[3])| $(nXs325[4])   | 
+"""
+
+# ╔═╡ a5e0febb-1bb2-4f01-acfa-927c2dcb433b
+md""" #### Fluorescence recorded by the CCD (in pes) λ = 405 nm 
+
+| Filter | Fbi G1 (Hz) | FbiBa G1 (Hz)
+|:---------- | ---------- |:------------:|
+| BP430    | $(nXs405[1])| $(nXs405[2]) | 
+| LP450    | $(nXs405[3])| $(nXs405[4])   | 
+"""
 
 # ╔═╡ 30156129-845e-4261-b549-e6c576c749ef
 begin
 	fi430bp = quadgk(filteredFbi430BP, 375.0,  700.0)[1]
 	fi450lp = quadgk(filteredFbi450LP, 375.0,  700.0)[1]
-	rfbi = fi430bp / fi450lp
+	rfbibplp = fi430bp / fi450lp
 end
 
-# ╔═╡ 2dc64611-1215-4ed0-a0e3-80536ff87b21
-@test rfbi ≈ fbi.fbiratio(filteredFbi430BP, filteredFbi450LP, 375.0,  700.0,375.0,  700.0)
+# ╔═╡ bc05ba67-4fdc-48bb-8985-6a9f62718f2e
+rfbibplpN = ccd325FbiG1F430BP / ccdn325FbiG1F450LP
 
-# ╔═╡ 3325a9f2-004f-4b5b-84bc-bb2618a51a43
-begin
-	rfbiba = fbi.fbiratio(filteredFbiBa430BP, filteredFbiBa450LP, 375.0, 700.0,
-		                                                      375.0,  700.0)
-	r2 = rfbiba / rfbi
-end
+# ╔═╡ dc9773bd-b1f0-4262-9a6a-d8636fb5fe2b
+rfbibpFbiBabp = ccdn405FbiBaG1F430BP / ccd405FbiG1F430BP
 
-# ╔═╡ fa2b678f-9721-4820-9823-c0bddc03ba30
-md"- Filtered spectrum ratios and double ratio:  
-- rfbi =$(utils.float_to_fstr(rfbi, \"%7.1g\")) 
-- rfbiba =$(utils.float_to_fstr(rfbiba, \"%7.1g\"))
-- r2 =$(utils.float_to_fstr(r2, \"%7.2g\"))"
+# ╔═╡ ea5bd4b0-9a3a-461c-9389-463c375b7c98
+rFbiBabplpN = ccdn405FbiBaG1F430BP / ccdn405FbiBaG1F450LP
 
-# ╔═╡ 1a1b4a30-3966-40ab-8469-1509539defa2
-md"#### Unfiltered specta"
+# ╔═╡ 31b1020e-a8e2-44fd-a08b-e49dca478d22
+rx405= lti.LabTools.to_fstr.([rfbibplpN,
+							rfbibpFbiBabp,
+							rFbiBabplpN],"%7.3g")
 
-# ╔═╡ e1c62a09-b62f-423f-a8b3-ba67bf308b92
-begin
-	rufbi = fbi.fbiratio(fbipdf, fbipdf, 425.0,  435.0, 450.0,  700.0)
-	rufbiba = fbi.fbiratio(fbibapdf, fbibapdf, 425.0,  435.0, 450.0,  700.0)
-	ur2 = rufbiba / rufbi
-end
 
-# ╔═╡ 8e5ea441-fe39-4e32-ae80-986331f786d9
-md"- Unfiltered spectrum ratios and double ratio:  
-- urfbi =$(utils.float_to_fstr(rufbi, \"%7.1g\")) 
-- urfbiba =$(utils.float_to_fstr(rufbiba, \"%7.1g\"))
-- ur2 =$(utils.float_to_fstr(ur2, \"%7.2g\"))"
-
-# ╔═╡ 1e325c2e-893a-4136-9302-45a61aa469df
-md"### Number of events reaching CCD for FBI and FBIBa"
-
-# ╔═╡ 5a48f61e-0de6-4b36-9f3e-6e539269ec03
-md"`nccd(n::Float64, fpdf::Function)` takes the number of photons that would reach the CCD for a flat FBI spectrum and unit filter transfer function (n) and multiplies by fpdf which is the product of the FBI pdf and the filters transfer function"
-
-# ╔═╡ 2197fe18-811a-4c2e-a1fc-daac14ff1fa0
-function nccd(n::Float64, fpdf::Function, wmin::Float64, wmax::Float64)
-	fi, eps = quadgk(fpdf, wmin, wmax)
-	return n * fi
-end
-
-# ╔═╡ 14d074ec-1880-449f-abfa-eab2f431fd76
-function nccd(n::Quantity, fpdf::Function, wmin::Float64, wmax::Float64)
-	fi, eps = quadgk(fpdf, wmin, wmax)
-	return n * fi
-end
-
-# ╔═╡ 0bb2ec9b-1741-451b-8dd2-31fde86098ad
-md"`nccd_nf_430bp_fbi` is the number of photons that reach the CCD in a non-focused (nf) setup, passing the 430BP filter transfer function, for FBI"
-
-# ╔═╡ 7dc8b84e-461a-46fb-8da0-e7ae12a74d78
-nγga
-
-# ╔═╡ 02e26731-8762-4680-8d15-3da475b3f3ce
-nγFbiccdLP450 = nccd(nγga, filteredFbi450LP, 450.0, 700.0)
-
-# ╔═╡ 1cfebc3a-4bbf-4f88-9084-c78e90861deb
-nγFbiccdBP430 = nccd(nγga, filteredFbi430BP, 425.0, 435.0)
-
-# ╔═╡ 7e189333-e1d4-4f84-9d6c-46c68359c2d7
-nγFbiBaccdLP450 = nccd(nγga, filteredFbiBa450LP, 450.0, 700.0)
-
-# ╔═╡ 6f4aebde-ffe8-4a58-b586-956a9323502e
-nγFbiBaccdBP430 = nccd(nγga, filteredFbiBa430BP, 425.0, 435.0)
-
-# ╔═╡ 98af40b7-836f-4fa8-8774-ca95ebafc4a6
-r2BP430 = nγFbiBaccdBP430 / nγFbiccdBP430
-
-# ╔═╡ de377d32-9c1a-4caa-a370-000b2fb34c83
-md" #### Summary of results:
-
-- Assume that the number of emitted photons is the same for both species (adjust otherwise).
-
-- Rate of FBI at the CCD LP450   = $(utils.float_to_fstr(nγFbiccdLP450/Hz, \"%7.2g\"))
-- Rate of FBI at the CCD BP430   = $(utils.float_to_fstr(nγFbiccdBP430/Hz, \"%7.2g\"))
-- Rate of FBIBa at the CCD LP450 = $(utils.float_to_fstr(nγFbiBaccdLP450/Hz, \"%7.2g\"))
-- Rate of FBIBa at the CCD BP430 = $(utils.float_to_fstr(nγFbiBaccdBP430/Hz, \"%7.2g\"))
-- R2 CCD  = $(utils.float_to_fstr(r2BP430, \"%7.2g\"))
+# ╔═╡ b71c2f66-52ae-466c-8241-36fdfdeacb88
+md"
+- Ratio BP/LP for Fbi       = $(rx405[1])
+- Ratio BP/BP for FbiBa/Fbi = $(rx405[3])
+- Ratio BP/LP for FbiBa     = $(rx405[2])
 "
 
 # ╔═╡ Cell order:
@@ -778,66 +770,54 @@ md" #### Summary of results:
 # ╠═1c31637a-8666-11eb-2ea6-17b0d4507e10
 # ╟─e0bbf162-fea4-427b-9133-569b51632746
 # ╠═28c0a218-8666-11eb-291a-71fd93c60da5
+# ╠═943550b1-7a39-4e99-9054-4b8e1c584b6f
+# ╠═0bddff38-99ad-475e-9515-579de07e8ab3
+# ╠═90fea6e7-9803-4833-8f66-f339ed9dd9b2
+# ╠═77a68d3b-8fc5-4ef6-bb20-3140779e6535
+# ╠═bb2e22d4-a54e-4519-9a65-89dd1f82a77b
+# ╠═2cd0e291-da66-489a-90af-38ce273c950d
+# ╠═7f081083-3b93-4100-ac1f-4866708fad77
 # ╠═586958c7-c69a-483a-b7c8-eb065db96f3b
-# ╟─013420a8-9129-11eb-0d7f-ab8fb7c70786
-# ╠═bfa4e6ef-469d-4552-b1b3-8bc1240dc1eb
-# ╠═274494c9-7ec3-4635-8e7d-6b5bbf27cef0
-# ╠═c89247fa-e827-4cea-b080-50df89bcfc20
-# ╠═8fe41c56-b0c1-4635-8977-713f5e6b496e
-# ╠═162d5452-8741-49aa-a219-c9f5aec83b82
-# ╠═35357f1b-f1fa-4a88-b6be-176dfb695585
-# ╠═0f84598d-32ad-43bc-8a9f-eb78a08d81b7
-# ╠═910d2777-321a-4548-bafe-3314c8f29436
-# ╠═ef55c4be-1cfd-48f3-901e-301ae3c3b607
-# ╠═7d25636f-a9e6-446a-879b-a053db2c310b
-# ╠═c1288245-be28-4216-9ca3-d6723dd6ff34
-# ╠═513be477-3279-4169-b254-4058c1a2baa2
-# ╟─53f112f6-ba9f-4089-ae96-83baad162fcc
+# ╠═4589e4cc-dd61-4239-b027-b135c3525f42
+# ╠═30371eba-26ac-429a-bb2e-30de65091288
+# ╠═b78e625e-4c71-4f1c-8711-cfe90c27519b
+# ╠═f0b9c27a-9623-48ee-b096-6a3fb56bc35c
+# ╠═013420a8-9129-11eb-0d7f-ab8fb7c70786
+# ╠═fe18d00d-3fe9-4bf4-b926-2dcc12d513ab
+# ╠═55046ba7-f5a6-4d9a-a767-3dcdb85bb1dc
+# ╠═53f112f6-ba9f-4089-ae96-83baad162fcc
 # ╟─990240b5-b30d-4c50-911c-42f01d7c98c3
-# ╠═7ff6fe7c-9129-11eb-1805-0dd052ec01a8
 # ╠═d0c7c8d5-e94b-434b-8920-c81688dfa5de
 # ╠═877170f1-4f5c-438d-8949-854d3e892a2e
-# ╟─a80e6642-908c-11eb-3ac3-6737f11f4eff
+# ╠═a80e6642-908c-11eb-3ac3-6737f11f4eff
 # ╠═9cb2c012-608a-4cff-b312-88bd2071da1f
 # ╠═cd707e24-df49-4f74-9890-0cdfcc1b9296
 # ╠═482b76cf-b3fb-4a30-8678-56ebe539fc5e
 # ╠═a35dd220-5ab1-4f70-901c-6a55f8e50123
 # ╠═aaf97203-1412-493f-94cb-75591ff981f7
 # ╠═4ed47097-0d51-4639-a19f-38bbaa6c508d
-# ╟─45fd4819-12bd-449e-9f37-5885cf3604ca
+# ╠═45fd4819-12bd-449e-9f37-5885cf3604ca
 # ╠═7f595bfa-71d6-42f3-913c-b7574c0d4fc2
-# ╠═dc32d330-8cb5-498a-a9f5-a9cd2359baf4
-# ╟─ccb649f8-0516-4a64-8ccc-5af13a7fe6e1
+# ╠═ccb649f8-0516-4a64-8ccc-5af13a7fe6e1
 # ╟─a6db60d8-371d-4b93-b164-38d44f00d17a
 # ╟─96639a5e-81c2-4eac-837c-fff5bc7ea5aa
 # ╟─639922e2-c0e5-48ee-a2b2-9e3afd543e1e
 # ╟─205870db-bf67-4ece-8de4-239aaa5edc47
 # ╠═21c6d2f8-519e-41ff-8895-ae3c77eb7a02
-# ╟─8b918c37-dcc2-4f23-b0e5-bced29d3c654
+# ╠═8b918c37-dcc2-4f23-b0e5-bced29d3c654
 # ╠═5347f077-66b4-45e6-a2f1-b0e6f52b0768
-# ╠═844b4b75-4285-4449-9635-64d00e2443b1
-# ╠═e9185f30-23d5-493c-9ac3-7b08201d8354
-# ╠═e39b6c3b-1b35-4e3d-a77f-ba1f8a574a86
-# ╠═dd9c1fd6-742f-4548-ad05-22977ccb2608
-# ╠═933a08d7-d9c9-4921-a9f8-cb6a90eb6940
-# ╠═ae44aa4d-54bd-42d7-be33-58f7980832ad
-# ╠═8f910b3e-bfa8-4774-a279-02db079e275c
-# ╠═1ee7d4cf-b25f-4b04-a194-7d729fa86beb
-# ╠═991eb30d-c5eb-4ed6-978e-1556961df89a
-# ╠═0973ae7d-cb35-4e0d-95cb-fe0258114e27
-# ╠═17e37f70-41da-4400-9c23-f2c85ee8927c
-# ╠═c620fc65-fa0e-47fe-a8dc-b04e2d7064b7
-# ╠═6f6e61db-e9b1-43bc-a68a-38aba9fccfb9
-# ╠═b844a604-a9b4-4b83-8d0c-c4711c3bc170
-# ╟─afe6ab7a-9133-11eb-1f9f-dd7c0b27e4d0
+# ╠═087da75f-f6a3-42f7-a5ee-c36d25326dcd
+# ╠═ea543fe2-fc1d-42fe-b563-8fca369b1974
+# ╠═eda71706-2771-47a6-8435-0274ef4b77cd
+# ╠═a7f980e2-4910-464f-8b83-155fcfba5501
+# ╠═afe6ab7a-9133-11eb-1f9f-dd7c0b27e4d0
+# ╠═e2525056-d023-49c8-b086-f9a6debecb9e
+# ╠═38979d58-a88f-4e3c-ba0e-e0ed7675054d
 # ╠═67b2b186-9139-11eb-2f29-f9f36be38b6f
-# ╠═55dc84a0-9139-11eb-1694-bba96f7bad9e
-# ╟─3d52a298-7ee2-4237-9f1f-39448d624867
 # ╠═a7bd7368-6bf3-4bac-9483-3b61528f20c7
-# ╠═e98c14f8-433a-4f58-a2b2-376b27570b6f
-# ╠═1f0e38e5-3583-4d41-b95d-a7934ccb6a4c
-# ╟─f96e9b12-9139-11eb-08cb-5319bca7a01d
-# ╟─b4badd12-8671-11eb-1f1b-69b36be8f7e4
+# ╠═47e4f919-3b72-47b9-8389-4a62587bb76b
+# ╠═f96e9b12-9139-11eb-08cb-5319bca7a01d
+# ╠═4624886f-f61b-4eaa-8a08-f275d74e9ac5
 # ╠═79af9066-8680-11eb-0d91-15759e995f6c
 # ╟─2f259d3a-8688-11eb-1733-13978ae756ce
 # ╟─56d72e3c-86fa-11eb-2928-798e913a5976
@@ -852,7 +832,6 @@ md" #### Summary of results:
 # ╠═5eaa4bc1-25d4-4a0e-837d-4c1f24f868c1
 # ╠═c126f2d9-0ccb-4b5c-9600-e14ad96e9591
 # ╠═7ccc9401-2fee-4d5e-a6ca-9a863c60d5a6
-# ╟─9bd87f70-24e6-4476-acf7-7647face1b3e
 # ╟─a40e5ab4-ff6c-4cbc-a377-db60b76d1963
 # ╠═e4abed36-f47b-4d77-9d10-e7455edd9325
 # ╠═202f831f-8e54-4d17-9f27-aea1a07ab919
@@ -865,7 +844,6 @@ md" #### Summary of results:
 # ╠═3d982cfb-7c5e-422a-8120-b6048b3cd658
 # ╟─da582c1b-0f85-48cf-afd1-61e8a83e6c48
 # ╠═241a2416-6bc7-4804-b6ae-874d9336a02a
-# ╠═23fabeb9-a947-4d44-9da2-a929cf9db6a4
 # ╠═f45d93f2-cc4d-4395-b9f3-f9a49983b8e2
 # ╠═12d79258-842a-45dd-bc09-fcad9f9ad7be
 # ╠═8f52fa68-7f07-4d06-8a5e-9c89708f29cd
@@ -880,27 +858,21 @@ md" #### Summary of results:
 # ╠═e72d34ff-1a0a-4dd4-a088-49e671d01408
 # ╠═60badadd-4df8-426a-b367-86e7bdc0c25f
 # ╠═6a5f6e6f-06cb-46cd-bab4-f3a0778af2b6
+# ╠═29ad555a-932b-4ee2-96c0-1e5550f7a1fd
 # ╠═67709bf1-298a-4371-8f91-1b6fab98ef6b
 # ╠═f613b185-0f04-4926-8e7d-f1d9d19046b5
-# ╟─95ce45d1-d000-46c4-9996-2aa6db2876cf
-# ╟─cf7dc98f-da76-4017-a967-8c33455406bc
-# ╠═e6149377-2aff-4c87-8ab0-226c1c65c378
+# ╠═3ab61c40-38a1-4654-99c5-6d5f6f36ea85
+# ╠═74ad1f8d-1a38-48de-a158-7f4c09bc7031
+# ╠═6b95832a-7c78-4ec9-891b-aaae5e382411
+# ╠═53dd2eaf-a0ac-41aa-a1c8-eb8c6daa9b17
+# ╠═6f9c9bfd-b533-4e0a-9a55-8cebaf773660
+# ╠═d5b81d54-ba97-43d8-852b-e511f65949ac
+# ╠═8925c81a-6c09-4ff4-bd05-ea4137a5752a
+# ╠═31c984a7-2a4f-4941-8824-3042d8bdfcb0
+# ╠═a5e0febb-1bb2-4f01-acfa-927c2dcb433b
 # ╠═30156129-845e-4261-b549-e6c576c749ef
-# ╠═2dc64611-1215-4ed0-a0e3-80536ff87b21
-# ╠═3325a9f2-004f-4b5b-84bc-bb2618a51a43
-# ╟─fa2b678f-9721-4820-9823-c0bddc03ba30
-# ╟─1a1b4a30-3966-40ab-8469-1509539defa2
-# ╠═e1c62a09-b62f-423f-a8b3-ba67bf308b92
-# ╟─8e5ea441-fe39-4e32-ae80-986331f786d9
-# ╟─1e325c2e-893a-4136-9302-45a61aa469df
-# ╟─5a48f61e-0de6-4b36-9f3e-6e539269ec03
-# ╠═2197fe18-811a-4c2e-a1fc-daac14ff1fa0
-# ╠═14d074ec-1880-449f-abfa-eab2f431fd76
-# ╟─0bb2ec9b-1741-451b-8dd2-31fde86098ad
-# ╠═7dc8b84e-461a-46fb-8da0-e7ae12a74d78
-# ╠═02e26731-8762-4680-8d15-3da475b3f3ce
-# ╠═1cfebc3a-4bbf-4f88-9084-c78e90861deb
-# ╠═7e189333-e1d4-4f84-9d6c-46c68359c2d7
-# ╠═6f4aebde-ffe8-4a58-b586-956a9323502e
-# ╠═98af40b7-836f-4fa8-8774-ca95ebafc4a6
-# ╟─de377d32-9c1a-4caa-a370-000b2fb34c83
+# ╠═bc05ba67-4fdc-48bb-8985-6a9f62718f2e
+# ╠═dc9773bd-b1f0-4262-9a6a-d8636fb5fe2b
+# ╠═ea5bd4b0-9a3a-461c-9389-463c375b7c98
+# ╠═31b1020e-a8e2-44fd-a08b-e49dca478d22
+# ╠═b71c2f66-52ae-466c-8241-36fdfdeacb88

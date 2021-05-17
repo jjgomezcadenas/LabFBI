@@ -52,7 +52,7 @@ Simple representation of a laser
 - `P::typeof(1.0mW)`  : Power
 
 """
-struct Laser
+mutable struct Laser
 	λ::typeof(1.0nm)
 	P::typeof(1.0mW)
 end
@@ -101,7 +101,59 @@ struct GaussianLaser
 	end
 end
 
+"""
+	LaserSetup
+
+Representation the setup in TOPATU which may include several lasers
+The setup is defined with one obective and one power. The dictionaries
+hold the information associated with the lasers.
+
+# Fields
+- `lasers  ::Dict{String,Laser}`
+- `power   ::typeof(1.0mW)`
+- `obj     ::Objective`
+- `glasers ::Dict{String,GaussianLaser}`
+- `dls     ::Dict{String,typeof(1.0nm)}`
+- `fovs    ::Dict{String, Fov}`
+- `Is      ::Dict{String, typeof(1.0Hz*μm^-2)}
+
+"""
+struct LaserSetup
+	lasers  ::Dict{String,Laser}
+	power   ::typeof(1.0mW)
+	obj     ::Objective
+	glasers ::Dict{String,GaussianLaser}
+	dls     ::Dict{String,typeof(1.0nm)}
+	fovs    ::Dict{String, Fov}
+	Is      ::Dict{String, typeof(1.0Hz*μm^-2)}
+
+	function LaserSetup(lasers, power, obj)
+		glasers = Dict{String,GaussianLaser}()
+		dls     = Dict{String,typeof(1.0nm)}()
+		fovs    = Dict{String, Fov}()
+		Is      = Dict{String, typeof(1.0Hz*μm^-2)}()
+
+		for key in keys(lasers)
+			lsr   = lasers[key]
+			lsr.P = power
+			gl    = GaussianLaser(lsr, obj)
+			dl    = diffraction_limit(gl)
+			fov   = Fov(dl, 2*gl.zr)
+			I     = photon_density(lsr, fov)
+
+			glasers[key] = gl
+			dls[key]     = dl
+			fovs[key]    = fov
+			Is[key]      = I
+		end
+
+		new(lasers, power, obj, glasers, dls, fovs, Is)
+	end
+end
+
+
 #FUNCTIONS
+
 """
 	photon_energy(λ::Unitful.Length)
 
@@ -217,7 +269,7 @@ end
 
 
 """
-	function w(gl::GaussianLaser, z::Unitful.Length)
+	w(gl::GaussianLaser, z::Unitful.Length)
 
 Waist of a laser at length z
 
@@ -232,7 +284,7 @@ end
 
 
 """
-	function gf(gl::GaussianLaser, z::Unitful.Length, r::Unitful.Length)
+	gf(gl::GaussianLaser, z::Unitful.Length, r::Unitful.Length)
 
 Gaussian distribution of a gaussian beam
 
@@ -249,7 +301,7 @@ end
 
 
 """
-	function gI(gl::GaussianLaser, z::Unitful.Length, r::Unitful.Length)
+	gI(gl::GaussianLaser, z::Unitful.Length, r::Unitful.Length)
 
 Intensity of a gaussian beam
 
@@ -262,6 +314,36 @@ Intensity of a gaussian beam
 function gI(gl::GaussianLaser, z::Unitful.Length, r::Unitful.Length)
 	wz = w(gl, z)
 	return (gl.w0/wz)^2 * gf(gl,z,r)
+end
+
+
+"""
+	diffraction_limit(l::Laser, obj:: Objective)
+
+Return the diameter of diffractive spot for a laser l
+focused with an objective obj
+
+# Fields
+
+- `l::Laser`         : A laser
+- `obj:: Objective`  : An objective
+"""
+function diffraction_limit(l::Laser, obj:: Objective)
+    return 1.22 * l.λ/(2 * obj.NA)
+end
+
+
+"""
+	diffraction_limit(gl::GaussianLaser)
+
+Return the diameter of diffractive spot for a gaussian laser
+
+# Fields
+
+- `gl::GaussianLaser`  : A gaussian laser
+"""
+function diffraction_limit(gl::GaussianLaser)
+    return 1.22 * gl.laser.λ/(2 * gl.obj.NA)
 end
 
 

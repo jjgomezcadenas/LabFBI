@@ -29,26 +29,29 @@ function plot_filter(filtername, fdf, fint, wl)
 	plot(p2, p3, layout = (1, 2), legend = false, fmt = :png)
 end
 
-function plot_filters(filterlist, filternames, wl)
-	function labels(filtername)
-		xlabel!("λ (nm)")
-		ylabel!("T")
-		title!(filtername)
-	end
-	PP = []
-	for (i, ff) in enumerate(filterlist)
-		ifbi = [ff(x*1.0) for x in wl]
 
-		p = plot(wl, ifbi,
-				 label = filternames[i],
-    			 color = markercolors[i],
-    			 lw=2, leg=:topright)
-		labels(filternames[i])
-		push!(PP,p)
-	end
 
-	return PP
-end
+
+# function plot_filters(filterlist, filternames, wl)
+# 	function labels(filtername)
+# 		xlabel!("λ (nm)")
+# 		ylabel!("T")
+# 		title!(filtername)
+# 	end
+# 	PP = []
+# 	for (i, ff) in enumerate(filterlist)
+# 		ifbi = [ff(x*1.0) for x in wl]
+#
+# 		p = plot(wl, ifbi,
+# 				 label = filternames[i],
+#     			 color = markercolors[i],
+#     			 lw=2, leg=:topright)
+# 		labels(filternames[i])
+# 		push!(PP,p)
+# 	end
+#
+# 	return PP
+# end
 
 function plot_filterset(fset, fname, wl)
 	function labels()
@@ -63,4 +66,11 @@ function plot_filterset(fset, fname, wl)
     	color = :blue,
     	lw=2, leg=:false)
 	labels()
+end
+
+
+function plot_filters(fnames, fdict, fw)
+
+	return [plot_filterset(fdict[name],
+			               name, fw[i]) for (i,name) in enumerate(fnames)]
 end

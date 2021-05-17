@@ -193,14 +193,25 @@ end
 Plot  (dx,cols) of dataframe df, where cols is a list of columns
 
 """
-function plotdf_xys(df::DataFrame, dfx::String, dfys::Array{String},
-	                labels::Array{String}, colors,
+function plotdf_xys(df::DataFrame, dfx::String, dfys::Vector{String},
+					norm::Bool,
+	                labels::Vector{String}, colors,
 	                xlabel, ylabel, title;
 	                shape = :circle,
 				    markersize = 2,
 		            legend=false)
 
-	p1 = plot(df[!,dfx], df[!,dfys[1]],
+	function csum(dfc)
+		if norm == true
+			xsum = sum(dfc)
+		else
+			xsum = 1.0
+		end
+		return xsum
+	end
+
+
+	p1 = plot(df[!,dfx], df[!,dfys[1]]/csum(df[!,dfys[1]]),
 		      label=labels[1],
 		      shape=shape,
 		      color=colors[1],
@@ -209,7 +220,7 @@ function plotdf_xys(df::DataFrame, dfx::String, dfys::Array{String},
 			  fmt = png)
 
 	for (i, dfy) in enumerate(dfys[2:end])
-		p1 = plot!(p1, df[!,dfx], df[!,dfy],
+		p1 = plot!(p1, df[!,dfx], df[!,dfy]/csum(df[!,dfy]),
 			      label=labels[i+1],
 			      shape=shape,
 			      color=colors[i+1],
@@ -223,6 +234,7 @@ function plotdf_xys(df::DataFrame, dfx::String, dfys::Array{String},
 	title!(title)
 	return p1
 end
+
 
 """
 	plotf(f, X, xlabel, ylabel, title;

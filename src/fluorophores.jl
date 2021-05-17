@@ -1,3 +1,4 @@
+#include("dffunctions.jl")
 using Unitful
 using UnitfulEquivalences
 using PhysicalConstants.CODATA2018
@@ -41,6 +42,20 @@ struct Fluorophore
 		σ = log(10) * uconvert(cm^2/mol, ϵ) / N_A
 		new(name, ex, en, ϵ, Q, σ)
 	end
+end
+
+"""
+	 FbiFluorophores
+Defines Fbi and FbiBa response to different lasers
+
+#Fields
+- `fbi   ::Dict{String, Fluorophore}`
+- `fbiba ::Dict{String, Fluorophore}`
+
+"""
+struct FbiFluorophores
+	fbi   ::Dict{String, Fluorophore}
+	fbiba ::Dict{String, Fluorophore}
 end
 
 
@@ -112,6 +127,48 @@ end
 
 
 #FUNCTIONS
+
+"""
+fbi_fluorophores(adf::DataFrame, gs::Vector{String}=["g1", "g2"],
+						  ls::Vector{Int64} = [325,405],
+						  qs::Vector{Float64} = [0.67,0.67])
+
+Return an object of type FbiFluorophore, defining the fluorophores associated
+with the versions of the molecule and the excitation wavelengths.
+
+# Fields
+- `adf::DataFrame`    :  A DF that contains data on extinction coefficients
+- `gs::Vector{String}`:  Version of molecule (g1, g2...)
+- `ls::Vect{Int64}`   :  Wavelengths (in nm)
+- `qs::Vect{Float64}` :  Quantum efficiencies
+
+"""
+function fbi_fluorophores(adf::DataFrame, gs::Vector{String}=["g1", "g2"],
+	                      ls::Vector{Int64} = [325,405],
+						  qs::Vector{Float64} = [0.67,0.67])
+	ffbi = Dict()
+	ffbiba = Dict()
+
+	for gn in gs
+		efbi = string("ϵFbi",titlecase(gn))
+		efbiba = string("ϵFbiBa",titlecase(gn))
+		for l in ls
+			lfbi = string("l", l, gn)
+			tfbi = string("Fbi",l,gn)
+			tfbiba = string("FbiBa",l,gn)
+
+			ffbi[lfbi]   = Fluorophore(tfbi, l*nm, 489nm,
+						   select_element(adf, "λ", l, efbi)/(M*cm), qs[1])
+
+
+			ffbiba[lfbi] = Fluorophore(tfbiba, l*nm, 405nm,
+						   select_element(adf, "λ", l, efbiba)/(M*cm), qs[2])
+		end
+	end
+
+	return FbiFluorophores(ffbi, ffbiba)
+end
+
 
 """
 	nofv(sol::Solution, vol::Unitful.Volume)
@@ -186,20 +243,4 @@ Number of Fluorophores per area for monolayer M
 """
 function nofa(M::Mlayer, area::Unitful.Area)
 	return  uconvert(NoUnits, area * M.σm)
-end
-
-
-"""
-	fluorescence(f::Fluorophore, I::Quantity)
-
-Number of  photons emitted per unit time when fluorosphore F
-is illuminated with a laser of photon density I
-
-# Fields
-
-- `f::Fluorophore`    : Define fluorophore
-- `I::(``nγ/cm^2``)`  : Photon density
-"""
-function fluorescence(f::Fluorophore, I::Quantity)
-	return uconvert(Hz, f.σ * f.Q * I)
 end

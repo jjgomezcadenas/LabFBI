@@ -160,6 +160,39 @@ gl = setup.GaussianLaser(l405,obj)
 # ╔═╡ 7a46771e-56f2-49f2-bbb4-d50ece6d9396
 @test gl.w0/gl.zr ≈ gl.obj.NA  
 
+# ╔═╡ ed74c7b1-0dc3-4017-91e0-2e7284a6e670
+md"""
+	diffraction_limit(l::Laser, obj:: Objective)
+
+Return the diameter of diffractive spot for a laser l
+focused with an objective obj
+
+\# Fields
+
+- `l::Laser`         : A laser
+- `obj:: Objective`  : An objective
+"""
+
+# ╔═╡ 66c91053-5c88-4de7-ad51-38cbfd80cf51
+dl = setup.diffraction_limit(l405, obj)
+
+# ╔═╡ db83f482-54d4-4bc1-9f87-dc92c9fa0af5
+md"""
+	diffraction_limit(gl::GaussianLaser)
+
+Return the diameter of diffractive spot for a gaussian laser
+
+\# Fields
+
+- `gl::GaussianLaser`  : A gaussian laser
+"""
+
+# ╔═╡ 69e7a83b-a233-4e0f-a1d5-024d879734ea
+dlgl = setup.diffraction_limit(gl)
+
+# ╔═╡ 78619a76-6875-4db7-b8d8-d39d63c8fae4
+@test setup.diffraction_limit(l405, obj) ≈ setup.diffraction_limit(gl)
+
 # ╔═╡ a23afa19-251e-475f-9858-7a4cf4edce7a
 md"""
 	photon_energy(λ::Unitful.Length)
@@ -561,6 +594,11 @@ plt.plot_xy(Ly, Eo,
 # ╟─8a860981-f307-459e-8f71-f68e86a178ad
 # ╠═b36913a0-f326-4c11-be0e-c6aab0c929ad
 # ╠═7a46771e-56f2-49f2-bbb4-d50ece6d9396
+# ╠═ed74c7b1-0dc3-4017-91e0-2e7284a6e670
+# ╠═66c91053-5c88-4de7-ad51-38cbfd80cf51
+# ╠═db83f482-54d4-4bc1-9f87-dc92c9fa0af5
+# ╠═69e7a83b-a233-4e0f-a1d5-024d879734ea
+# ╠═78619a76-6875-4db7-b8d8-d39d63c8fae4
 # ╟─a23afa19-251e-475f-9858-7a4cf4edce7a
 # ╟─ace197ec-f75f-4a61-af07-c4fdff2a66a3
 # ╠═553fe29c-9d4d-4c17-8d96-c034ffadb527

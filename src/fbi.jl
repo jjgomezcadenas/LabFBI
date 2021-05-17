@@ -1,5 +1,5 @@
-include("dffunctions.jl")
-include("math.jl")
+#include("dffunctions.jl")
+#include("math.jl")
 
 """
 	mec_at_lamda(df::DataFrame, λ::Float64, scols::AbstractRange)
