@@ -101,6 +101,7 @@ struct GaussianLaser
 	end
 end
 
+
 """
 	LaserSetup
 
@@ -167,6 +168,7 @@ function photon_energy(λ::Unitful.Length)
 	uconvert(eV, λ, Spectral())
 end
 
+
 """
 	delivered_energy(laser::Laser, t::Unitful.Time)
 
@@ -181,6 +183,7 @@ function delivered_energy(laser::Laser, t::Unitful.Time)
 	laser.P * t
 end
 
+
 """
 	n_photons(laser::Laser)
 
@@ -194,6 +197,7 @@ Rate of photons (number of photons per unit time) produced by a laser
 function n_photons(laser::Laser)
 	uconvert(Hz, laser.P / photon_energy(laser.λ))
 end
+
 
 """
 	n_photons(λ::Unitful.Length, p::Unitful.Power)
@@ -211,6 +215,7 @@ function n_photons(λ::Unitful.Length, p::Unitful.Power)
 	uconvert(Hz, p / photon_energy(λ))
 end
 
+
 """
 	n_photons_int(laser::Laser, t::Unitful.Time)
 
@@ -225,6 +230,7 @@ Integrated number of photons in a given time emitted by a laser
 function n_photons_int(laser::Laser, t::Unitful.Time)
 	uconvert(eV,delivered_energy(laser, t)) / photon_energy(laser.λ)
 end
+
 
 """
 	photon_density(λ::Unitful.Length, p::Unitful.Power, a::Unitful.Area)
@@ -241,6 +247,7 @@ number of photons per unit time per unit area
 function photon_density(λ::Unitful.Length, p::Unitful.Power, a::Unitful.Area)
 	return n_photons(λ, p)/ a
 end
+
 
 """
 	photon_density(l::Laser, fov::Fov)

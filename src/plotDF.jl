@@ -44,7 +44,7 @@ function log_xy(x, y, xlabel, ylabel, title;
 				 legend=false)
 
 	p1 = plot(x, y,
-			  xaxis=:log,
+			  yaxis=:log,
 		      lw=lw,
 		      color=color,
 		      linestyle = linestyle,

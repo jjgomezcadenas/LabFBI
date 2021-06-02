@@ -2,6 +2,7 @@
 using Unitful
 using UnitfulEquivalences
 using PhysicalConstants.CODATA2018
+using DataFrames
 
 import Unitful:
     nm, μm, mm, cm, m, km, inch, ft, mi,

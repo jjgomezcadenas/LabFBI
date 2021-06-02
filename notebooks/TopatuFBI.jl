@@ -252,6 +252,21 @@ begin
 	plot(piz0,pir0, layout = (1, 2), legend=false, fmt = :png)
 end
 
+# ╔═╡ 95410bf9-cd66-45b6-995f-0db88b574101
+150 * 6.5
+
+# ╔═╡ 2a9285d4-58e0-4911-9149-4dfc488e8b32
+π*975^2
+
+# ╔═╡ c8c555cf-7f6e-4578-89aa-596386f5f073
+6.3E-3^2 * 70691
+
+# ╔═╡ 549de295-b554-480b-bbf1-21f9ddcb7d82
+
+
+# ╔═╡ e7cb41f0-15e2-48bc-a2f6-3d50e86f487b
+lfi.LabFbi.qpdf(giz0, 0.0, 500.0)
+
 # ╔═╡ dd35eedb-9ed0-4bc2-9636-3192c1b034ab
 md"### Spatial distribution 325 nm beam"
 
@@ -1221,9 +1236,14 @@ md"- Therefore, the observed irradiance would be: $ios Hz/μm2"
 # ╟─5bd97b62-5d4d-4483-8c05-2eec1d1e6b57
 # ╟─f4fd8031-1b85-4f98-898f-eb09835ddc2d
 # ╟─62da60bf-df76-41f9-9027-78953fbbcdb8
-# ╟─30371eba-26ac-429a-bb2e-30de65091288
-# ╟─b78e625e-4c71-4f1c-8711-cfe90c27519b
-# ╟─dd35eedb-9ed0-4bc2-9636-3192c1b034ab
+# ╠═30371eba-26ac-429a-bb2e-30de65091288
+# ╠═b78e625e-4c71-4f1c-8711-cfe90c27519b
+# ╠═95410bf9-cd66-45b6-995f-0db88b574101
+# ╠═2a9285d4-58e0-4911-9149-4dfc488e8b32
+# ╠═c8c555cf-7f6e-4578-89aa-596386f5f073
+# ╠═549de295-b554-480b-bbf1-21f9ddcb7d82
+# ╠═e7cb41f0-15e2-48bc-a2f6-3d50e86f487b
+# ╠═dd35eedb-9ed0-4bc2-9636-3192c1b034ab
 # ╟─3d182094-a3bb-413a-a1fc-6026839557c0
 # ╟─f0b9c27a-9623-48ee-b096-6a3fb56bc35c
 # ╟─013420a8-9129-11eb-0d7f-ab8fb7c70786
