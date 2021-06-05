@@ -61,6 +61,21 @@ end
 
 
 """
+	 IrRuFluorophores
+Defines Ir and Ru response to different lasers
+
+#Fields
+- `ir   ::Dict{String, Fluorophore}`
+- `ru   ::Dict{String, Fluorophore}`
+
+"""
+struct IrRuFluorophores
+	ir::Dict{String, Fluorophore}
+	ru::Dict{String, Fluorophore}
+end
+
+
+"""
 	struct Solution
 
 Represent a fluorophore in solution
@@ -168,6 +183,42 @@ function fbi_fluorophores(adf::DataFrame, gs::Vector{String}=["g1", "g2"],
 	end
 
 	return FbiFluorophores(ffbi, ffbiba)
+end
+
+
+"""
+iru_fluorophores(adf::DataFrame,
+                 gs::Vector{String}=["IrF", "Ir", "Ru", "IrF+","Ir++","Ru++"],
+				 ls::Vector{Int64} = [325,405],
+				 qs::Vector{Float64} = [0.01,0.01,0.01,0.01,0.01, 0.01])
+
+Return Dict{String, Fluorophore}, defining the fluorophores associated
+with the versions of the Ir/Ru calibration molecules and the excitation
+wavelengths.
+
+# Fields
+- `adf::DataFrame`    :  A DF that contains data on extinction coefficients
+- `gs::Vector{String}`:  Version of molecule ("IrF", "Ir", "Ru", "IrF+","Ir++","Ru++")
+- `ls::Vect{Int64}`   :  Wavelengths (in nm)
+- `qs::Vect{Float64}` :  Quantum efficiencies
+
+"""
+function iru_fluorophores(adf::DataFrame,
+                 gs::Vector{String}=["IrF", "Ir", "Ru", "IrF+","Ir++","Ru++"],
+				 ls::Vector{Int64} = [325,405],
+				 qs::Vector{Float64} = [0.01,0.01,0.01,0.01,0.01, 0.01])
+	F = Dict()
+	for (i, gn) in enumerate(gs)
+		ef = string("ϵ",gn)
+		for l in ls
+			lfs = string("l", l, gn)
+
+			F[lfs]  = Fluorophore(ef, l*nm, 405.0nm,
+					  select_element(adf, "λ", l, ef)/(M*cm), qs[i])
+		end
+	end
+
+	return F
 end
 
 

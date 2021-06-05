@@ -35,6 +35,24 @@ end
 
 end
 
+
+@testset "iruFluorophores_test" begin
+
+	rdf = load_df_from_csv(datadir("fbi"),
+	                       "molar_extinction_coefficient_RuIr.csv",
+	                       enG)
+	#
+	iruFluo = iru_fluorophores(rdf,
+	                       ["IrF", "Ir", "Ru", "IrF+","Ir++","Ru++"],
+				           [325,405],
+				           [0.01,0.01,0.01,0.01,0.01, 0.01])
+
+	@test iruFluo["l325Ru"].name == "ϵRu"
+	@test iruFluo["l325Ru"].ϵ    == 9339.0 * 1.0/(cm*M)
+	@test iruFluo["l405Ru++"].name == "ϵRu++"
+	@test iruFluo["l405Ru++"].ϵ    == 7293.0 * 1.0/(cm*M)
+end
+
 @testset "fluorescence_test" begin
 	efluo = emitted_fluorescence(fbiFluo, lT)
 	mfov =  molecules_in_fov(lT, solfbi)
