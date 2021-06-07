@@ -207,8 +207,20 @@ md" ##### Set diameter of the CCD (in mm)"
 # ╔═╡ ea8a0d64-4329-4080-80e0-0fa12ec1554b
 @bind Dccd NumberField(10.0:20.0; default=13.3)
 
+# ╔═╡ a8be2b0d-26f0-408d-a069-f92cc09d5514
+md" ##### Set conversion ADC to PES"
+
+# ╔═╡ d89bc3d6-8642-496b-a3f4-17f5c801512c
+@bind adcpes NumberField(0.0:1.0; default=0.47)
+
 # ╔═╡ dac46998-e6a2-41fb-adf7-c1d20d7493ff
 md""" ##### Set concentration of test solution"""
+
+# ╔═╡ 9602abd4-50cf-47dd-8bcd-450fc3ccf587
+md" ##### Set Q (oxygenated) for fluorophore"
+
+# ╔═╡ f9c273a2-b808-4e0e-b949-fe29d05c16d4
+@bind Q NumberField(0.0:1.0; default=0.1)
 
 # ╔═╡ c3a6a828-b18d-461c-bb17-2b13feaa593e
 md"- Set units (in M)"
@@ -249,7 +261,7 @@ begin
 	void()
 end
 
-# ╔═╡ b2eef01f-774e-43b7-88d7-1b9ddbe10355
+# ╔═╡ 0092e011-1abc-4cdb-a529-d926ae51c81e
 gl = lfi.LabFbi.GLaser(λ, P, w0);
 
 # ╔═╡ ba8e38da-c4ff-4638-a362-10ddad2e296e
@@ -267,11 +279,11 @@ When the beam crosses the vial it iluminates all the fluorophores. The emitted r
 
 $N = \sigma\, Q\, C \int_z \int_r I(r)\, 2 \pi r \, dr \,  dz$
 
-The integral in $z$ is trivial and yields the thickness of the vial, $t$. The integral in $r$ can be precisely approximated by the integral to all the space, since the dimensions in r of the vial are much larger than the beam spread. Thus:
+The integral in $z$ is trivial and yields the length of the vial, $L$. The integral in $r$ can be precisely approximated by the integral to all the space, since the dimensions in r of the vial are much larger than the beam spread. Thus:
 
-$N = I_0\, \sigma\, Q\, C\, t\, 2 \pi \int e^{-2(r/w_0)^2} r dr$
+$N = I_0\, \sigma\, Q\, C\, L\, 2 \pi \int e^{-2(r/w_0)^2} r dr$
 
-$N =  \frac{ I_0\, \sigma\, Q\, C\, t\, \pi w_0^2}{2} = P \sigma\, Q\, C\, t$
+$N =  \frac{ I_0\, \sigma\, Q\, C\, L\, \pi w_0^2}{2} = P \sigma\, Q\, C\, L$
 
 For a gaussian beam > 99.9 % of the power is contained in a radius $\rho = 2 w(z)$. In our case $w(z) \sim w_0$, and thus all the beam power is contained in $2 w_0$. Thus:
 
@@ -279,7 +291,7 @@ For a gaussian beam > 99.9 % of the power is contained in a radius $\rho = 2 w(z
 
 This means that the photons are emitted along a "wire" of $(2*gl.w0) mm diameter and  $lz length. The dimensions of the fluorescent volume are small compared with the solid angle, since the CCD is at a distance d = $dccd mm much larger than t = $lz mm. Therefore, we can approximate that the emission occurs from a single point located in the center of the vase. 
 
-Notice also that for given fluorophore and setup, the product $\sigma\, Q\, C\, t$ is a constant, and thus the slope of the power scan is simply P.
+Notice also that for given fluorophore and setup, the product $\sigma\, Q\, C\, L$ is a constant, and thus the slope of the power scan is simply P.
 
 The geometrical acceptance is: 
 
@@ -287,6 +299,9 @@ $A = \frac{1}{2}(1 - \frac{d}{\sqrt{(d^2 + (D/2)^2}})$
 
 where $D$ is the aperture of the CCD and $d$ is the distance to the interaction point.
 """
+
+# ╔═╡ a22bb851-cc1d-4c8b-9a5c-505bffe9d39e
+md"### CCD and Fluorophore"
 
 # ╔═╡ 9ca51bea-10ac-43e9-8da6-f3d960c634b8
 md""" ## Predicted power scan:
@@ -307,22 +322,25 @@ md"## Notebook"
 # ╔═╡ f887dc67-8095-442c-aa3b-9f57e5ec7362
 rul = lfi.LabFbi.load_df_from_csv(datadir("solutionLaser"),
 	                          "20210603_Ru_Solution_2p5em5_M_Power_ramp.csv", 
-	                          lfi.LabFbi.enG)
+	                          lfi.LabFbi.enG);
 
 # ╔═╡ a0f45e02-644c-4b96-ba6e-f2e1c32e60a0
 pm = rul.P
 
+# ╔═╡ 817be26b-897e-4996-a452-5c55dd7b45bf
+ipes = rul.I[1] *adcpes
+
 # ╔═╡ 6557e731-e074-4d42-b4df-7137be2ba358
 md""" ## Measured rate:
 
-- The measured rate at a power of $(rul.P[1]) μW is $(lti.LabTools.to_fstr(rul.I[1],"%5.2g")) Hz
+- The measured rate at a power of $(rul.P[1]) μW is $(lti.LabTools.to_fstr(ipes,"%5.2g")) Hz
 """ 
 
 # ╔═╡ 3483e954-f3d0-419e-87c8-1aca0788f36c
 md" - Fit to a straight line, y = x1 + x2*x. Then assign the value of x1 to the background ambient light and subtract" 
 
 # ╔═╡ b98f48b8-9445-49b9-94f7-65cf4c72b2dc
-ruf = lfi.LabFbi.lfit(rul.P, rul.I)
+ruf = lfi.LabFbi.lfit(rul.P, rul.I * adcpes)
 
 # ╔═╡ db46f5fd-20d6-4177-9c4c-1db73fab1b94
 x1, x2 = coef(ruf)
@@ -358,16 +376,56 @@ end
 plot(xprz0,xprz1,xprz2,xprz3, layout = (2, 2), legend=false, fmt = :png)
 
 # ╔═╡ 42fa897b-36d6-4568-a9ae-98e5ac359f75
-md"### Prediction, Ru++ solution C = 2.5E-5 M"
+md"## Prediction, Ru++ solution C = 2.5E-5 M"
 
-# ╔═╡ 16e5972e-9df1-4841-b33d-948234fd5415
-gl
+# ╔═╡ 3ca78d4a-52f2-4b1f-9c2c-d1f3cfbcd14d
+md"#### Define CCD"
 
-# ╔═╡ 69112710-c703-47dd-9188-c3623b2dba43
-lfi.LabFbi.n_photons(gl.λ, gl.P)
+# ╔═╡ e0bd1a1e-6274-4062-aab3-886ae3146eb3
+orca = lfi.LabFbi.ccd()
 
-# ╔═╡ e1634858-45a0-4aae-8ce1-069a5fde936b
-uconvert(Hz*mm^-2, gl.ρ0)
+# ╔═╡ 8e112380-2e85-4c16-a7ff-417f4d2c9d0b
+begin
+	xL = collect(350.:5.:1000.)
+	xEff =orca.(xL)
+	porca = plot(xL, xEff, leg=false, lw=2);
+
+	xlabel!("λ (nm)")
+	ylabel!("Efficiency")
+	title!("Efficiency of CCD ")
+	void()
+end
+
+# ╔═╡ 0777a0d1-673a-4db3-8eb6-46d9b35e7701
+md"#### Read the Ru DF and interpolate function to data"
+
+# ╔═╡ 209747a6-5a77-431c-97ad-f1ad3b185a7f
+ru405df = lfi.LabFbi.load_df_from_csv(datadir("fluorimeter/RuIrPy"), "RuppSol.csv", lfi.LabFbi.spG);
+
+
+# ╔═╡ 527bf9ce-62d6-45f9-a833-9692c6fa36f8
+md"#### plot spectrum"
+
+# ╔═╡ b0c0fa14-c303-4709-9c29-f1fad2a38758
+md"#### Compute efficiency of CCD integrated over all spectrum"
+
+# ╔═╡ 755e3bb2-9fdc-4ab1-8206-a122fa0e050a
+md"### Filters"
+
+# ╔═╡ e48da31e-b52a-4790-bb88-26142c3c32e1
+filterd = lfi.LabFbi.get_filters(lfi.LabFbi.fnames, datadir("filters"))
+
+# ╔═╡ 8259abcd-5eab-43de-a345-86624e79e696
+fw = [390:420,420:500,420:520,440:540, 390:560, 390:450]
+
+# ╔═╡ eedd1f33-a337-4239-8237-11d83a95fbde
+Pft = lpi.LabPlots.plot_filters(lfi.LabFbi.fnames, filterd, fw);
+
+# ╔═╡ 6464b1bb-6c3f-4a6a-af39-69b6718bda96
+plot(Pft..., layout = (3, 2), legend=false, fmt = :png)
+
+# ╔═╡ b56f168a-992b-4043-a06a-8620819416a7
+cflt =lfi.LabFbi.common_filters(filterd)
 
 # ╔═╡ c14ed4e6-d688-4451-9c80-de16d9e9e204
 md" ## Functions"
@@ -415,7 +473,7 @@ function fluorescence_rate2(gl, fl, t, C)
 end
 
 # ╔═╡ 48c61758-bbe1-4832-9159-abe589a59894
-function rate_prediction(gl,setup, sset)
+function rate_prediction(gl,setup, sset, eff_ccdFilters)
 	if sset == "FBI"
 		cdf = lfi.LabFbi.load_df_from_csv(datadir("fbi"),
 	                          "molar_extinction_coefficient_G1G2.csv", 
@@ -430,66 +488,21 @@ function rate_prediction(gl,setup, sset)
 		fl = lfi.LabFbi.iru_fluorophores(cdf, 
 	                       ["IrF", "Ir", "Ru", "IrF+","Ir++","Ru++"],
 				           [325,405],
-				           [0.10,0.10,0.10,0.10,0.10, 0.10])
+				           [Q,Q,Q,Q,Q, Q])
 		fr = fluorescence_rate2(gl, fl["l405Ru++"], setup.t, setup.c)
 	end
 	ga = lfi.LabFbi.geometrical_acceptance(setup.d/mm, setup.D/mm)
-	return fr * ga
+	return fr * ga * eff_ccdFilters
 	
 			
 end
 
-# ╔═╡ 4cc4ccf5-469a-425d-b184-505dcc446074
-rateccd = rate_prediction(gl,setup, sset)
-
-# ╔═╡ cdd8ebd3-5491-448e-9346-85a8f3f75d9c
-md""" ## Predicted rate:
-
-- The integrated rate expected in the CCD for the above parameters  with a concentration of $cs M is $(lti.LabTools.to_fstr(rateccd/Hz,"%5.2g")) Hz
-""" 
-
 # ╔═╡ bdf0eb6f-3c18-408b-9151-89c725237a4f
-function rate_prediction_power(pp, setup, sset)
+function rate_prediction_power(pp, setup, sset, eff_ccdFilters)
 	GL = [lfi.LabFbi.GLaser(λ, p, w0) for p in pp]
-	IFR = [rate_prediction(gl,setup, sset) for gl in GL]
+	IFR = [rate_prediction(gl,setup, sset, eff_ccdFilters) for gl in GL]
 	return IFR
 end
-
-# ╔═╡ a96245fd-4ced-4314-b48e-ae2eec93abc8
-IP = rate_prediction_power(uconvert.(mW,PP), setup, sset)
-
-# ╔═╡ de85876d-edc2-4a32-baf8-35804dbdc8dc
-pip = lpi.LabPlots.plot_xy(PP/μW, IP/Hz, "P (μW)", 
-	                "I(Hz)",
-	                "Predicted Power scan")
-
-# ╔═╡ c7ba4361-5a9e-4961-87d8-ad934d0bd31e
-begin
-pru = scatter(rul.P, rul.I, yerror= rul.σI, label="data",
-		       shape = :circle, color = :black, markersize = 5, legend=false)
-pru2 = plot!(pru, PP/μW, IF, color = :red,
-				 lw = 2, label="fit to data",
-				 linestyle = :solid)
-	
-pru3 = plot!(pru2, PP/μW, IP/Hz, color = :blue,
-				 lw = 2, label="model",
-				 linestyle = :solid, legend=:topleft)
-xlabel!("P (μW)")
-ylabel!("I (photoelectrons)")
-title!("I vs P")
-
-end
-
-# ╔═╡ 534d40ce-70cc-4f87-ac48-bfe7330c5acb
-begin
-	pre = lfi.LabFbi.lfit(PP/μW, IP/Hz)
-	xp1, xp2 = coef(pre)
-	r2 = x2 / xp2	
-	void()
-end
-
-# ╔═╡ 8999a1fd-d27c-4b60-acfb-927e0ff6d3f2
-md""" - The ratio between the slopes of data and model is $(lti.LabTools.to_fstr(r2,"%5.2g"))"""
 
 # ╔═╡ 55e57114-347a-434b-be67-2ddb14d43067
 function r_θ(θr, z)
@@ -531,8 +544,8 @@ end
 
 # ╔═╡ b3370280-5321-4a05-816f-ce41acb09952
 begin
-	ginfo = glaser_md(gl)
-	Markdown.parse("$ginfo")
+ginfo = glaser_md(gl)	
+Markdown.parse("$ginfo")
 end
 
 # ╔═╡ 1e6f38e5-f521-4467-9f8e-e4a62751f8bd
@@ -541,8 +554,8 @@ function setup_md(setup, sset)
 	ll = lti.LabTools.to_fstr(setup.t/mm,"%5.2g")
 	cc = lti.LabTools.to_fstr(setup.C/M,"%5.2g")
 	cmol = lti.LabTools.to_fstr(setup.c/mm^-3,"%5.2g")
-	dc = lti.LabTools.to_fstr(setup.d/mm,"%5.2g")
-	Dc = lti.LabTools.to_fstr(setup.D/mm,"%5.2g")
+	dc = lti.LabTools.to_fstr(setup.D/mm,"%5.2g")
+	Dc = lti.LabTools.to_fstr(setup.d/mm,"%5.2g")
 	md = string(md, "  - molecule            = $sset \n")
 	md = string(md, "  - Thickness vase  = $ll  mm \n")
 	md = string(md, "  - Concentration   = $cc  M \n")
@@ -556,6 +569,146 @@ end
 begin
 	sinfo = setup_md(setup, sset)
 	Markdown.parse("$sinfo")
+end
+
+# ╔═╡ d7f6f631-d03f-4c8e-a33e-31ad218fa43c
+struct DfInfo
+	name::String
+	λex ::String
+	λi::Float64
+	λf::Float64
+	CN::Array{String}
+	C::Array{typeof(1.0M)}
+end
+
+# ╔═╡ 472ba287-5f97-432d-bb3a-077f42365214
+function dfinfo(df,nx=2:7)
+	function cnames(df, nx)
+		return names(df)[nx]
+	end
+	
+	function dflm(df)
+		l = df[!, "λ"]
+		return l[1], l[end]
+	end
+	
+	function dfc(df, nx=2:7)
+		nz = split.(cnames(df,nx),"_")
+		cs = [n[2] for n in nz]
+		return parse.(Float64, cs) * M
+	end
+	
+	λi, λf = dflm(df)
+	cs = dfc(df, nx)
+	cn = cnames(df, nx)
+	cn1s = split(cn[1],"_")
+	lexc = cn1s[3]
+	dfname = cn1s[1]
+	
+	return DfInfo(dfname, lexc, λi, λf, cn, cs)
+end
+
+# ╔═╡ a6177074-45db-4a41-8946-30a4a434df22
+dfi = dfinfo(ru405df,2:7)
+
+# ╔═╡ 71e7af35-3070-4979-b416-aebf41c996ec
+gfru405 = lfi.LabFbi.dftogf(dfi.λi:2.0:dfi.λf, ru405df, dfi.CN[3])
+
+# ╔═╡ 080f125c-1172-427e-8ce6-5c130f28343f
+ϵccd(λ) = map(x->orca(x) * gfru405.pdf(x), λ)
+
+# ╔═╡ ad7fbfdd-b1d5-4f7a-813e-0916b868cada
+ϵccdFilters(λ) = map(x->cflt(x) * orca(x)* gfru405.pdf(x), λ)
+
+# ╔═╡ e662c24a-2e0b-4e64-b1b0-db0d2084b0bc
+begin
+	pru405 = lpi.LabPlots.plotdf_xys(ru405df, "λ", 
+		                             dfi.CN[3:3], false,  dfi.CN[3:3],
+	                                    markercolors, 
+					                    "λ(nm)", "I (au)", 
+					                    "Ru++", legend=:topright) 
+pgfru405 =lpi.LabPlots.plotdf_gfs([gfru405], dfi.λi:2.0:dfi.λf,[dfi.CN[3]], 
+	                              pdf=false,
+	                              [:red], "λ (nm)", "I (au)", "FBIG1",
+		                          legend=:topright)
+void()
+end
+
+# ╔═╡ da6100ac-e6b6-40a7-b34c-a6d120a7e417
+prux = lpi.LabPlots.merge_plots!(pru405, pgfru405)
+
+# ╔═╡ e54c6c15-a386-47b1-a368-4466bb274b8a
+plot(porca,prux, layout = (1, 2), legend=false, fmt = :png)
+
+# ╔═╡ f2320190-8caf-4539-8360-e2bff21adb06
+lfi.LabFbi.qpdf(gfru405.pdf, dfi.λi, dfi.λf)
+
+# ╔═╡ b967a7d2-83b8-4904-9eb8-2a524de44351
+eff_ccd = lfi.LabFbi.qpdf(ϵccd, dfi.λi, dfi.λf)
+
+# ╔═╡ 9462c377-93c8-43bd-9b83-6aed6bdbf379
+eff_ccdFilters = lfi.LabFbi.qpdf(ϵccdFilters, dfi.λi, dfi.λf)
+
+# ╔═╡ a96245fd-4ced-4314-b48e-ae2eec93abc8
+IP = rate_prediction_power(uconvert.(mW,PP), setup, sset, eff_ccdFilters) 
+
+# ╔═╡ de85876d-edc2-4a32-baf8-35804dbdc8dc
+pip = lpi.LabPlots.plot_xy(PP/μW, IP/Hz, "P (μW)", 
+	                "I(Hz)",
+	                "Predicted Power scan")
+
+# ╔═╡ c7ba4361-5a9e-4961-87d8-ad934d0bd31e
+begin
+pru = scatter(rul.P, rul.I * adcpes, yerror= rul.σI, label="data",
+		       shape = :circle, color = :black, markersize = 5, legend=false)
+pru2 = plot!(pru, PP/μW, IF, color = :red,
+				 lw = 2, label="fit to data",
+				 linestyle = :solid)
+	
+pru3 = plot!(pru2, PP/μW, IP/Hz, color = :blue,
+				 lw = 2, label="model",
+				 linestyle = :solid, legend=:topleft)
+xlabel!("P (μW)")
+ylabel!("I (photoelectrons)")
+title!("I vs P")
+
+end
+
+# ╔═╡ 534d40ce-70cc-4f87-ac48-bfe7330c5acb
+begin
+	pre = lfi.LabFbi.lfit(PP/μW, IP/Hz)
+	xp1, xp2 = coef(pre)
+	r2 = x2 / xp2	
+	void()
+end
+
+# ╔═╡ 8999a1fd-d27c-4b60-acfb-927e0ff6d3f2
+md""" - The ratio between the slopes of data and model is $(lti.LabTools.to_fstr(r2,"%5.2g"))"""
+
+# ╔═╡ a99e1894-f7c9-4132-9bf4-ddc91dde26f5
+rateccd = rate_prediction(gl,setup, sset, eff_ccdFilters)
+
+# ╔═╡ cdd8ebd3-5491-448e-9346-85a8f3f75d9c
+md""" ## Predicted rate:
+
+- The integrated rate expected in the CCD for the above parameters  with a concentration of $cs M is $(lti.LabTools.to_fstr(rateccd/Hz,"%5.2g")) Hz
+""" 
+
+# ╔═╡ 5ee1d01d-54e3-40c7-a4dc-e3c40c625b07
+function dfinfomd(dfi)
+	md =""" ### Fluorophore \n
+- df name  = $(dfi.name)
+- df λ exc = $(dfi.λex)
+- Concentration (in M) = $(lti.LabTools.vect_to_fstr(dfi.C./M, "%s"))
+- λmin = $(dfi.λi) nm, λmax = $(dfi.λf) nm
+	"""
+	return md
+end
+
+# ╔═╡ 08c21279-c41c-4d45-b02c-e849cf818cc4
+begin
+	runfo = dfinfomd(dfi)
+	Markdown.parse("$runfo")
 end
 
 # ╔═╡ Cell order:
@@ -589,9 +742,13 @@ end
 # ╠═5b5ef870-3a41-48b1-99b8-6a95e90ad125
 # ╟─7c343c65-ac30-4662-b133-9055cb1ed8d5
 # ╠═f5f1f76b-9dc6-48c2-8e67-87a565cdf41b
-# ╟─82c72876-4a85-403c-9642-96d2505aba32
+# ╠═82c72876-4a85-403c-9642-96d2505aba32
 # ╠═ea8a0d64-4329-4080-80e0-0fa12ec1554b
+# ╠═a8be2b0d-26f0-408d-a069-f92cc09d5514
+# ╠═d89bc3d6-8642-496b-a3f4-17f5c801512c
 # ╟─dac46998-e6a2-41fb-adf7-c1d20d7493ff
+# ╟─9602abd4-50cf-47dd-8bcd-450fc3ccf587
+# ╟─f9c273a2-b808-4e0e-b949-fe29d05c16d4
 # ╟─c3a6a828-b18d-461c-bb17-2b13feaa593e
 # ╟─0ac0eeb8-1bde-4a47-874d-f68649c19320
 # ╟─6d57e4ea-857a-414e-a848-dd5ef4541a91
@@ -603,14 +760,17 @@ end
 # ╠═b91be939-f092-4bf3-914c-fbe1b02dc9fd
 # ╠═a969225a-1254-48ef-9775-8189ccfb9110
 # ╠═371dfb8c-4b37-427a-8be5-9448262ef65d
-# ╠═b2eef01f-774e-43b7-88d7-1b9ddbe10355
+# ╠═0092e011-1abc-4cdb-a529-d926ae51c81e
 # ╠═b3370280-5321-4a05-816f-ce41acb09952
 # ╠═c13d2440-2944-45e6-b88c-3c74c418cc3e
 # ╠═73642c7c-e095-4eee-bb07-c86dbcce5c7d
-# ╠═4cc4ccf5-469a-425d-b184-505dcc446074
+# ╠═a22bb851-cc1d-4c8b-9a5c-505bffe9d39e
+# ╠═e54c6c15-a386-47b1-a368-4466bb274b8a
+# ╠═08c21279-c41c-4d45-b02c-e849cf818cc4
 # ╠═cdd8ebd3-5491-448e-9346-85a8f3f75d9c
 # ╠═a0f45e02-644c-4b96-ba6e-f2e1c32e60a0
-# ╟─6557e731-e074-4d42-b4df-7137be2ba358
+# ╠═817be26b-897e-4996-a452-5c55dd7b45bf
+# ╠═6557e731-e074-4d42-b4df-7137be2ba358
 # ╟─9ca51bea-10ac-43e9-8da6-f3d960c634b8
 # ╠═3b1d3646-eef1-4a2b-a6fa-e631307eca40
 # ╠═a96245fd-4ced-4314-b48e-ae2eec93abc8
@@ -620,7 +780,7 @@ end
 # ╠═c7ba4361-5a9e-4961-87d8-ad934d0bd31e
 # ╟─8999a1fd-d27c-4b60-acfb-927e0ff6d3f2
 # ╟─534d40ce-70cc-4f87-ac48-bfe7330c5acb
-# ╠═6d946d69-33c0-40d2-8ddf-ebe9b7957ab6
+# ╟─6d946d69-33c0-40d2-8ddf-ebe9b7957ab6
 # ╠═f887dc67-8095-442c-aa3b-9f57e5ec7362
 # ╠═3483e954-f3d0-419e-87c8-1aca0788f36c
 # ╠═b98f48b8-9445-49b9-94f7-65cf4c72b2dc
@@ -635,9 +795,29 @@ end
 # ╟─6976b4d9-3d80-429c-8b19-4323acf6ae63
 # ╠═5c77e6ad-878c-4e90-a3bf-f5fc87b8e4fe
 # ╠═42fa897b-36d6-4568-a9ae-98e5ac359f75
-# ╠═16e5972e-9df1-4841-b33d-948234fd5415
-# ╠═69112710-c703-47dd-9188-c3623b2dba43
-# ╠═e1634858-45a0-4aae-8ce1-069a5fde936b
+# ╠═3ca78d4a-52f2-4b1f-9c2c-d1f3cfbcd14d
+# ╠═e0bd1a1e-6274-4062-aab3-886ae3146eb3
+# ╠═8e112380-2e85-4c16-a7ff-417f4d2c9d0b
+# ╠═0777a0d1-673a-4db3-8eb6-46d9b35e7701
+# ╠═209747a6-5a77-431c-97ad-f1ad3b185a7f
+# ╠═a6177074-45db-4a41-8946-30a4a434df22
+# ╠═71e7af35-3070-4979-b416-aebf41c996ec
+# ╠═527bf9ce-62d6-45f9-a833-9692c6fa36f8
+# ╠═e662c24a-2e0b-4e64-b1b0-db0d2084b0bc
+# ╠═da6100ac-e6b6-40a7-b34c-a6d120a7e417
+# ╠═b0c0fa14-c303-4709-9c29-f1fad2a38758
+# ╠═080f125c-1172-427e-8ce6-5c130f28343f
+# ╠═f2320190-8caf-4539-8360-e2bff21adb06
+# ╠═b967a7d2-83b8-4904-9eb8-2a524de44351
+# ╠═755e3bb2-9fdc-4ab1-8206-a122fa0e050a
+# ╠═e48da31e-b52a-4790-bb88-26142c3c32e1
+# ╠═8259abcd-5eab-43de-a345-86624e79e696
+# ╠═eedd1f33-a337-4239-8237-11d83a95fbde
+# ╠═6464b1bb-6c3f-4a6a-af39-69b6718bda96
+# ╠═b56f168a-992b-4043-a06a-8620819416a7
+# ╠═ad7fbfdd-b1d5-4f7a-813e-0916b868cada
+# ╠═9462c377-93c8-43bd-9b83-6aed6bdbf379
+# ╠═a99e1894-f7c9-4132-9bf4-ddc91dde26f5
 # ╠═c14ed4e6-d688-4451-9c80-de16d9e9e204
 # ╠═f8fb5bd8-408f-4203-8eec-d94146a96dc3
 # ╠═bc31b8c8-d5c6-4724-97b8-485075463549
@@ -648,3 +828,6 @@ end
 # ╠═55e57114-347a-434b-be67-2ddb14d43067
 # ╠═45a00153-71a1-4072-a548-507fcc241575
 # ╠═1e6f38e5-f521-4467-9f8e-e4a62751f8bd
+# ╠═d7f6f631-d03f-4c8e-a33e-31ad218fa43c
+# ╠═472ba287-5f97-432d-bb3a-077f42365214
+# ╠═5ee1d01d-54e3-40c7-a4dc-e3c40c625b07
