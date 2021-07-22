@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.5
+# v0.14.7
 
 using Markdown
 using InteractiveUtils
@@ -13,14 +13,20 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 2166631f-cd54-4dc7-a122-9616e6939345
-import Pkg
+# ╔═╡ bd59a5b8-8dac-4982-92e3-6d410b69e31c
+begin
+	import Pkg
+	Pkg.add("StatsPlots")
+end
 
 # ╔═╡ eb573495-dfeb-471c-a0b2-11b2c76f6b25
 Pkg.add("SpecialFunctions")
 
 # ╔═╡ 25b471c6-e7b4-41a9-b7e6-bd316d78b0c7
 Pkg.add("HCubature")
+
+# ╔═╡ cc9d45d5-81d4-4525-add1-68f5adbbcc42
+Pkg.add("GR")
 
 # ╔═╡ f5a9c61a-c216-11eb-1ddc-6f24685e81bc
 begin
@@ -65,6 +71,9 @@ using DrWatson
 # ╔═╡ 50df4350-0159-4a32-a4a3-2b196734853c
 md"# Calibration of TOPATU with solutions: unfocused setup"
 
+# ╔═╡ 10715061-650c-48a9-87af-d726b3444768
+Pkg.update("GR")
+
 # ╔═╡ 189dd02c-5243-49c3-88e4-fdb8f79380c9
 function ingredients(path::String)
 	# this is from the Julia source code (evalfile in base/loading.jl)
@@ -100,6 +109,13 @@ end
 
 # ╔═╡ 160eb718-f450-494a-a35b-1d3771d5b35e
 markercolors = [:green :orange :black :purple :red  :yellow :brown :white]
+
+# ╔═╡ 73f50e92-1c10-4d52-8fe3-f6fcd8e5b42a
+gr(size=(500,500), xtickfontsize=12, ytickfontsize=12, xguidefontsize=14, yguidefontsize=14, legendfontsize=10, dpi=100, grid=(:y, :gray, :solid, 2, 0.4));
+
+
+# ╔═╡ eb50ea90-be5e-4301-98b6-3871add430ff
+
 
 # ╔═╡ 27c53ff7-e67e-4ce8-bcc1-adaeef8c2129
 md"## Units"
@@ -303,26 +319,29 @@ where $D$ is the aperture of the CCD and $d$ is the distance to the interaction 
 # ╔═╡ a22bb851-cc1d-4c8b-9a5c-505bffe9d39e
 md"### CCD and Fluorophore"
 
-# ╔═╡ 9ca51bea-10ac-43e9-8da6-f3d960c634b8
-md""" ## Predicted power scan:
-""" 
-
-# ╔═╡ 3b1d3646-eef1-4a2b-a6fa-e631307eca40
-PP = collect(0.0:10.0:5000.0) * μW
-
-# ╔═╡ 09363b5d-faa1-4aae-9079-89a09178fbf1
-md"## Comparison with experimental data"
-
 # ╔═╡ 571c0b4d-c554-440c-927f-2996710e2246
 md"### Laser Measurement, Ru++ solution C = 2.5E-5 M"
 
 # ╔═╡ 6d946d69-33c0-40d2-8ddf-ebe9b7957ab6
 md"## Notebook"
 
+# ╔═╡ 3c0476c6-da9b-44e6-964b-37ea70854ba6
+md"- ipes is the intensity in photoelectrons, obtained from the measured data multiplying by the CCD conversion constant ($adcpes pes per adc count)"
+
+# ╔═╡ 9ca51bea-10ac-43e9-8da6-f3d960c634b8
+md""" ### Predicted power scan:
+""" 
+
+# ╔═╡ 3b1d3646-eef1-4a2b-a6fa-e631307eca40
+PP = collect(0.0:10.0:5000.0) * μW
+
+# ╔═╡ 2f74a681-310c-4914-9b25-ee780b513417
+md"#### Read Power Scan data"
+
 # ╔═╡ f887dc67-8095-442c-aa3b-9f57e5ec7362
 rul = lfi.LabFbi.load_df_from_csv(datadir("solutionLaser"),
 	                          "20210603_Ru_Solution_2p5em5_M_Power_ramp.csv", 
-	                          lfi.LabFbi.enG);
+	                          lfi.LabFbi.enG)
 
 # ╔═╡ a0f45e02-644c-4b96-ba6e-f2e1c32e60a0
 pm = rul.P
@@ -331,16 +350,21 @@ pm = rul.P
 ipes = rul.I[1] *adcpes
 
 # ╔═╡ 6557e731-e074-4d42-b4df-7137be2ba358
-md""" ## Measured rate:
+md""" ### Measured rate:
 
 - The measured rate at a power of $(rul.P[1]) μW is $(lti.LabTools.to_fstr(ipes,"%5.2g")) Hz
 """ 
+
+# ╔═╡ 4a194d15-566d-404a-a022-5347447cf1b6
+arul = lfi.LabFbi.load_df_from_csv(datadir("solutionLaser"),
+	                          "20210608_Ru_Solution_ALL_M_Power_ramp.csv", 
+	                          lfi.LabFbi.enG)
 
 # ╔═╡ 3483e954-f3d0-419e-87c8-1aca0788f36c
 md" - Fit to a straight line, y = x1 + x2*x. Then assign the value of x1 to the background ambient light and subtract" 
 
 # ╔═╡ b98f48b8-9445-49b9-94f7-65cf4c72b2dc
-ruf = lfi.LabFbi.lfit(rul.P, rul.I * adcpes)
+ruf = lti.LabTools.lfit(rul.P, rul.I * adcpes)
 
 # ╔═╡ db46f5fd-20d6-4177-9c4c-1db73fab1b94
 x1, x2 = coef(ruf)
@@ -652,11 +676,6 @@ eff_ccdFilters = lfi.LabFbi.qpdf(ϵccdFilters, dfi.λi, dfi.λf)
 # ╔═╡ a96245fd-4ced-4314-b48e-ae2eec93abc8
 IP = rate_prediction_power(uconvert.(mW,PP), setup, sset, eff_ccdFilters) 
 
-# ╔═╡ de85876d-edc2-4a32-baf8-35804dbdc8dc
-pip = lpi.LabPlots.plot_xy(PP/μW, IP/Hz, "P (μW)", 
-	                "I(Hz)",
-	                "Predicted Power scan")
-
 # ╔═╡ c7ba4361-5a9e-4961-87d8-ad934d0bd31e
 begin
 pru = scatter(rul.P, rul.I * adcpes, yerror= rul.σI, label="data",
@@ -674,9 +693,14 @@ title!("I vs P")
 
 end
 
+# ╔═╡ de85876d-edc2-4a32-baf8-35804dbdc8dc
+pip = lpi.LabPlots.plot_xy(PP/μW, IP/Hz, "P (μW)", 
+	                "I(Hz)",
+	                "Predicted Power scan")
+
 # ╔═╡ 534d40ce-70cc-4f87-ac48-bfe7330c5acb
 begin
-	pre = lfi.LabFbi.lfit(PP/μW, IP/Hz)
+	pre = lti.LabTools.lfit(PP/μW, IP/Hz)
 	xp1, xp2 = coef(pre)
 	r2 = x2 / xp2	
 	void()
@@ -689,7 +713,7 @@ md""" - The ratio between the slopes of data and model is $(lti.LabTools.to_fstr
 rateccd = rate_prediction(gl,setup, sset, eff_ccdFilters)
 
 # ╔═╡ cdd8ebd3-5491-448e-9346-85a8f3f75d9c
-md""" ## Predicted rate:
+md""" ### Predicted rate:
 
 - The integrated rate expected in the CCD for the above parameters  with a concentration of $cs M is $(lti.LabTools.to_fstr(rateccd/Hz,"%5.2g")) Hz
 """ 
@@ -713,18 +737,22 @@ end
 
 # ╔═╡ Cell order:
 # ╟─50df4350-0159-4a32-a4a3-2b196734853c
-# ╟─2166631f-cd54-4dc7-a122-9616e6939345
-# ╟─eb573495-dfeb-471c-a0b2-11b2c76f6b25
-# ╟─25b471c6-e7b4-41a9-b7e6-bd316d78b0c7
-# ╟─f5a9c61a-c216-11eb-1ddc-6f24685e81bc
-# ╟─7c296957-7de3-411e-be97-bb3272c29102
-# ╟─65c05bfa-a565-41c1-aff7-71f96c7b9cbd
-# ╟─189dd02c-5243-49c3-88e4-fdb8f79380c9
-# ╟─ac29bcd2-37be-40f8-bbcf-095e3af08a7b
-# ╟─a0c6b3d3-a43d-45c3-b511-9a21ce8e2390
+# ╠═eb573495-dfeb-471c-a0b2-11b2c76f6b25
+# ╠═25b471c6-e7b4-41a9-b7e6-bd316d78b0c7
+# ╠═cc9d45d5-81d4-4525-add1-68f5adbbcc42
+# ╠═10715061-650c-48a9-87af-d726b3444768
+# ╠═f5a9c61a-c216-11eb-1ddc-6f24685e81bc
+# ╠═bd59a5b8-8dac-4982-92e3-6d410b69e31c
+# ╠═7c296957-7de3-411e-be97-bb3272c29102
+# ╠═65c05bfa-a565-41c1-aff7-71f96c7b9cbd
+# ╠═189dd02c-5243-49c3-88e4-fdb8f79380c9
+# ╠═ac29bcd2-37be-40f8-bbcf-095e3af08a7b
+# ╠═a0c6b3d3-a43d-45c3-b511-9a21ce8e2390
 # ╟─8c9a2ea3-6a7e-45ae-99a1-6db448064e35
-# ╟─223d92a7-6db0-4383-848e-72f592c8627e
-# ╟─160eb718-f450-494a-a35b-1d3771d5b35e
+# ╠═223d92a7-6db0-4383-848e-72f592c8627e
+# ╠═160eb718-f450-494a-a35b-1d3771d5b35e
+# ╠═73f50e92-1c10-4d52-8fe3-f6fcd8e5b42a
+# ╠═eb50ea90-be5e-4301-98b6-3871add430ff
 # ╟─27c53ff7-e67e-4ce8-bcc1-adaeef8c2129
 # ╠═5869c147-6e13-4269-942a-fd84340011ba
 # ╠═8077956e-84c6-4565-8647-c8bb197ae65e
@@ -754,9 +782,9 @@ end
 # ╟─6d57e4ea-857a-414e-a848-dd5ef4541a91
 # ╟─f3c687c7-03a2-4502-bbab-d6366121d747
 # ╟─b0e199e1-c1b9-48ce-bd25-9b48cd5ef9d1
-# ╟─89a3cd82-cb35-4f68-89ac-06c50dbf71a9
-# ╟─e2b13a80-17bf-4647-b083-f3f9252fa1e4
-# ╟─904130b2-f0e8-4f82-8afc-06977fc04801
+# ╠═89a3cd82-cb35-4f68-89ac-06c50dbf71a9
+# ╠═e2b13a80-17bf-4647-b083-f3f9252fa1e4
+# ╠═904130b2-f0e8-4f82-8afc-06977fc04801
 # ╠═b91be939-f092-4bf3-914c-fbe1b02dc9fd
 # ╠═a969225a-1254-48ef-9775-8189ccfb9110
 # ╠═371dfb8c-4b37-427a-8be5-9448262ef65d
@@ -768,20 +796,22 @@ end
 # ╠═e54c6c15-a386-47b1-a368-4466bb274b8a
 # ╠═08c21279-c41c-4d45-b02c-e849cf818cc4
 # ╠═cdd8ebd3-5491-448e-9346-85a8f3f75d9c
-# ╠═a0f45e02-644c-4b96-ba6e-f2e1c32e60a0
-# ╠═817be26b-897e-4996-a452-5c55dd7b45bf
 # ╠═6557e731-e074-4d42-b4df-7137be2ba358
-# ╟─9ca51bea-10ac-43e9-8da6-f3d960c634b8
+# ╟─571c0b4d-c554-440c-927f-2996710e2246
+# ╠═c7ba4361-5a9e-4961-87d8-ad934d0bd31e
+# ╠═8999a1fd-d27c-4b60-acfb-927e0ff6d3f2
+# ╠═6d946d69-33c0-40d2-8ddf-ebe9b7957ab6
+# ╠═a0f45e02-644c-4b96-ba6e-f2e1c32e60a0
+# ╠═3c0476c6-da9b-44e6-964b-37ea70854ba6
+# ╠═817be26b-897e-4996-a452-5c55dd7b45bf
+# ╠═9ca51bea-10ac-43e9-8da6-f3d960c634b8
 # ╠═3b1d3646-eef1-4a2b-a6fa-e631307eca40
 # ╠═a96245fd-4ced-4314-b48e-ae2eec93abc8
 # ╠═de85876d-edc2-4a32-baf8-35804dbdc8dc
-# ╟─09363b5d-faa1-4aae-9079-89a09178fbf1
-# ╟─571c0b4d-c554-440c-927f-2996710e2246
-# ╠═c7ba4361-5a9e-4961-87d8-ad934d0bd31e
-# ╟─8999a1fd-d27c-4b60-acfb-927e0ff6d3f2
 # ╟─534d40ce-70cc-4f87-ac48-bfe7330c5acb
-# ╟─6d946d69-33c0-40d2-8ddf-ebe9b7957ab6
+# ╠═2f74a681-310c-4914-9b25-ee780b513417
 # ╠═f887dc67-8095-442c-aa3b-9f57e5ec7362
+# ╠═4a194d15-566d-404a-a022-5347447cf1b6
 # ╠═3483e954-f3d0-419e-87c8-1aca0788f36c
 # ╠═b98f48b8-9445-49b9-94f7-65cf4c72b2dc
 # ╠═228a018c-dcae-4804-95d0-a1a6db9dcfd2
