@@ -70,24 +70,18 @@ function load_filter(name::String, path::String, ext::String=".csv")
 	end
 
 	file    = path_from_name(name, path, ext)
-	if name == "NF405"
-		csvf    = CSV.File(file; delim=spG.delim, decimal=spG.decimal)
-	else
-		csvf    = CSV.File(file; delim=enG.delim, decimal=enG.decimal)
-	end
+
+	csvf    = CSV.File(file; delim=enG.delim, decimal=enG.decimal)
+
 
 	df = DataFrame(csvf)
 
-	if name == "NF405"
-		df = fixdf(df, 1,2)
+	if name == "NF405" || name == "BandPass430" || name == "BandPass405"
 		sort!(df, rev = false)
-	elseif name == "BandPass430"
-		df = fixdf(df)
-		sort!(df, rev = false)
-	elseif name == "DoubleNotch405_522"
-		df = scaledf(df)
-	elseif name == "LongPass425" || name == "LongPass450"
-		df = fixdf(df)
+	"""elseif name == "BandPass430" || name == "BandPass405"
+		sort!(df, rev = false)"""
+	#elseif name == "DoubleNotch405_522"
+	#	df = scaledf(df)
 	end
 
 	df[!, :λ] = map(t -> t*1.0, df[:, :λ])
