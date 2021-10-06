@@ -387,19 +387,6 @@ function transmission(objective::Objective)
 end
 
 
-"""
-	transmission(A::Float64)
-
-Compute the transmission as a function of NA.
-
-# Fields
-
-- `A::Float64` : Numerical acceptance (NA)
-
-"""
-function transmission(A::Float64)
-	A <=1 ? (1 - sqrt(1 - A^2)) /2 : 0.5
-end
 
 #CCD is defined in terms of a function which returns the CCD response
 #(e.g, function ccd returns a response function, which gives efficiency
@@ -423,6 +410,23 @@ function ccd(lmin::Float64=350.0, lmax::Float64=1000.0)
 			wl = 350.:50.:1000.
 			ϵ = [0.3, 0.4,0.65,0.78,0.82,0.82,0.8,0.72,0.62,0.5,0.37,
 			  0.24,0.12,0.07]
+			e = CubicSplineInterpolation(wl, ϵ)
+			return e(l)
+		end
+	end
+	return eff
+end
+
+function qccd(lmin::Float64=250.0, lmax::Float64=1100.0)
+	function eff(l::Float64)
+		if l < lmin || l > lmax
+			return 0.
+		else
+			# [253.57, 287.97, 294.03, 309.49, 341.95, 360.83, 375.42, 396.46, 446.41, 510.30, 574.20, 634.61, 698.50, 762.39, 826.00, 884.88, 933.75, 981.88, 1043.53]
+			#ϵ = [0.001, 0.103, 0.252, 0.310, 0.343, 0.496, 0.647, 0.795, 0.894, 0.883, 0.815, 0.724, 0.640, 0.566, 0.479, 0.363, 0.241, 0.119, 0.019]
+
+			wl = 250.:15.:1100.
+			ϵ= [0.00, 0.00, 0.02, 0.29, 0.31, 0.27, 0.34, 0.45, 0.58, 0.71, 0.83, 0.87, 0.88, 0.89, 0.89, 0.90, 0.90, 0.89, 0.88, 0.86, 0.84, 0.83, 0.81, 0.79, 0.77, 0.74, 0.71, 0.69, 0.67, 0.65, 0.64, 0.62, 0.60, 0.59, 0.57, 0.55, 0.53, 0.51, 0.49, 0.46, 0.44, 0.42, 0.38, 0.34, 0.30, 0.27, 0.23, 0.19, 0.15, 0.11, 0.09, 0.06, 0.03, 0.02, 0.01, 0.01, 0.00]
 			e = CubicSplineInterpolation(wl, ϵ)
 			return e(l)
 		end
